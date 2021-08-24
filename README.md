@@ -1,24 +1,6 @@
+![](README.assets/pic1.jpg)
 
-
-<div align=center><img src="pic1.jpg" style="zoom:100%;" /></div>
-
-<div align=center><img src="pic2.jpg" style="zoom:100%;" /></div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![](README.assets/pic2.jpg)
 
 # 0.Changelog
 
@@ -1347,10 +1329,9 @@
 
   StartPath(recv_string,0,1)
 
-  ​
+  
 
-  ​
-
+  
 
 
 
