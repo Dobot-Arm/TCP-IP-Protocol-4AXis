@@ -10,8 +10,11 @@
 - V1.3-2021/07/13：更新返回数据表格
 - V1.4-2021/07/16: Arc3 改为Arc : 与新版MG400指令一致；ServoJ的参数不能以表的形式，因为一次只能下发一个点，ServoP相同；文档中是1440字节，不是1044。
 - V1.5-2021/07/23: 数据的结构体去除掉添加一个是字节位置值；对RobotMode的状态优先级进行描述；新增机器人上电接口。
-- V1.6-2021/08/04:调整Dashboard端口和实时反馈端口表格位置；根据xk项目，新增运行脚本、读写保存寄存器、获取机器人状态等指令；
+- V1.6-2021/08/04:调整Dashboard端口和实时反馈端口表格位置；根据GK项目，新增运行脚本、读写保存寄存器、获取机器人状态等指令；
 - V1.7-2021/08/23:添加Sync指令、SetArmOrientation描述优化、电子皮肤SetObstacleAvoid、SetSafeSkin相关指令、轨迹复现相关指令GetTraceStartPose、GetPathStartPose、StartTrace、StartPath以及正解逆解接口InverseSolution、PositiveSolution；以及若干书写错误；
+- V1.8-2021/08/31:新增碰撞等级SetCollisionLevel、轨迹文件预处理接口HandleTrajPoints、获取六维力数据GetSixForceData、获取笛卡尔坐标系下机械臂的实时位姿接口GetPose、获取关节坐标系下机械臂的实时位姿接口GetAngle、急停指令EmergencyStop、带力控的轨迹拟合StartFCTrace、关节/笛卡尔点动指令MoveJog；
+- V1.8-2021/09/15:定义轨迹预处理运行结果接口；若用户下发不带参数的该指令，代表查询当前指令的结果（适用于轨迹文件预处理）；轨迹复现/拟合/带力控拟合通过RobotMode获取机器人运行状态；
+- V1.8-2021/09/27:更改Sync指令的端口到29999(阻塞指令),待所有队列指令执行完才返回done；以及去掉多余指令；
 
 
 
@@ -92,7 +95,13 @@
 | GetPathStartPose  | 获取轨迹复现中首个点位                              |
 | PositiveSolution  | 正解                                       |
 | InverseSolution   | 逆解                                       |
-| ArmOrientation    | 臂方向                                      |
+| SetCollisionLevel | 设置碰撞等级                                   |
+| HandleTrajPoints  | 轨迹文件预处理                                  |
+| GetSixForceData   | 获取六维力数据                                  |
+| GetAngle          | 获取关节坐标系下机械臂的实时位姿                         |
+| GetPose           | 获取笛卡尔坐标系下机械臂的实时位姿                        |
+| EmergencyStop     | 急停                                       |
+| Sync              | 阻塞程序执行队列指令，待所有队列指令执行完才返回                 |
 
 
 
@@ -318,7 +327,7 @@
 
   | 参数名    | 类型   | 含义                   |
   | ------ | ---- | -------------------- |
-  | index  | int  | 数字输出索引，取值范围：1~16     |
+  | index  | int  | 数字输出索引，取值范围：1~24     |
   | status | int  | 数字输出端口状态，1：高电平；0：低电平 |
 
 - 示例：
@@ -692,7 +701,8 @@
 
 
 - 示例：从地址3095开始读取一个16位无符号整数
-- data= GetHoldRegs(0,3095,1)
+
+  data= GetHoldRegs(0,3095,1)
 
 ## 3.30 SetHoldRegs
 
@@ -716,7 +726,8 @@
 
 
 - 示例：从地址3095开始，写入两个16位无符号整数值6000，300
-- SetHoldRegs(0,3095,2,{6000,300}, “U16”)
+
+  SetHoldRegs(0,3095,2,{6000,300}, “U16”)
 
 
 ## 3.31 SetSafeSkin
@@ -780,13 +791,11 @@
 
 - 返回：
 
-  点位坐标值
+  点位坐标值  {x,y,z,a,b,c}
 
 - 示例：
 
-  local recv_string=”demo.json”
-
-  local P1 = GetTraceStartPose(recv_string)
+  GetTraceStartPose(recv_string)
 
 ## 3.34 GetPathStartPose
 
@@ -807,13 +816,11 @@
 
 - 返回：
 
-  关节点位坐标值
+  关节点位坐标值 {j1,j2,j3,j4,j5,j6}
 
 - 示例：
 
-  local recv_string=”demo.json”
-
-  local P1 = GetPathStartPose(recv_string)
+  GetPathStartPose(recv_string)
 
 ## 3.35 PositiveSolution
 
@@ -844,13 +851,13 @@
 
 - 示例：下发关节角度返回当前的机器人末端的空间位置
 
-  local P1 = PositiveSolution(0,0,-90,0,90,0)
+  PositiveSolution(0,0,-90,0,90,0)
 
 ## 3.36 InverseSolution
 
 - 功能：逆解。（已知机器人末端的位置和姿态，计算机器人各关节的角度值）
 
-- 格式：InverseSolution(X,Y,Z,A,B,C)
+- 格式：InverseSolution(X,Y,Z,Rx,Ry,Rz)
 
 - 参数数量：6
 
@@ -863,9 +870,9 @@
   | X    | double | X 轴位置，单位：毫米 |
   | Y    | double | Y 轴位置，单位：毫米 |
   | Z    | double | Z 轴位置，单位：毫米 |
-  | A    | double | A 轴位置，单位：度  |
-  | B    | double | B 轴位置，单位：度  |
-  | C    | double | C 轴位置，单位：度  |
+  | Rx   | double | Rx 轴位置，单位：度 |
+  | Ry   | double | Ry轴位置，单位：度  |
+  | Rz   | double | Rz轴位置，单位：度  |
 
 - 注意，需要已知：
 
@@ -875,10 +882,127 @@
 
 - 示例：下发关节角度返回当前的机器人末端的空间位置
 
-  local P1 = PositiveSolution(0,-247,1050,-90,0,180)
+  PositiveSolution(0,-247,1050,-90,0,180)
 
 
+## 3.37 SetCollisionLevel
 
+- 功能：设置碰撞等级。 
+
+- 格式：SetCollisionLevel(level)
+
+- 参数数量：1
+
+- 支持端口：29999
+
+- 参数详解：
+
+  | 参数名   | 类型   | 含义                                       |
+  | ----- | ---- | ---------------------------------------- |
+  | level | int  | level: 碰撞等级<br /> 0：关闭碰撞检测<br /> 1~5：等级越高越灵敏 |
+
+
+- 示例：
+
+  SetCollisionLevel(1)
+
+## 3.38 HandleTrajPoints
+
+- 功能：轨迹文件的预处理。
+
+- 格式：HandleTrajPoints(traceName)
+
+- 参数数量：1
+
+- 支持端口：29999
+
+- 参数详解：1
+
+  | 参数名       | 类型     | 含义                                       |
+  | --------- | ------ | ---------------------------------------- |
+  | traceName | string | 轨迹文件名（含后缀）<br /> 轨迹路径存放在/dobot/userdata/project/process/trajectory/ |
+
+- **备注：若用户下发不带参数的该指令，代表查询当前指令的结果；**返回：返回为-3表示文件内容错误，返回为-2表示文件不存在，返回为-1表示预处理没有完成；返回为0表示预处理完成，没有错误；返回大于0的结果表示当前返回结果对应的点位有问题；
+
+- 示例：下发轨迹名为recv_string做预处理，然后在一定周期查询预处理结果；
+
+  HandleTrajPoints(recv_string)
+
+  HandleTrajPoints()
+
+## 3.39 GetSixForceData
+
+- 功能：获取六维力数据
+
+- 格式：GetSixForceData()
+
+- 参数数量：0
+
+- 支持端口：29999
+
+- 返回：当前六维力数据原始值；
+
+- 示例：
+
+  local P1 = GetSixForceData()
+
+## 3.40 GetAngle
+
+- 功能：获取关节坐标系下机械臂的实时位姿
+
+- 格式：GetAngle()
+
+- 参数数量：0
+
+- 支持端口：29999
+
+- 返回：机械臂当前位置的关节坐标值；
+
+- 示例：
+
+   GetAngle()
+
+## 3.41 GetPose
+
+- 功能：获取笛卡尔坐标系下机械臂的实时位姿(如果设置了用户坐标系或工具坐标系，则获取的位姿为当前坐标系下的位姿)
+
+- 格式：GetPose()
+
+- 参数数量：0
+
+- 支持端口：29999
+
+- 返回：机械臂当前位置的笛卡尔坐标值；
+
+- 示例：
+
+  GetPose()
+
+## 3.42 EmergencyStop
+
+- 功能：急停，机器人记录
+
+- 格式：EmergencyStop()
+
+- 参数数量：0
+
+- 支持端口：29999
+
+- 示例：
+
+   EmergencyStop()
+
+   ​
+
+## 3.43 Sync
+
+- 功能：阻塞程序执行队列指令，待所有队列指令执行完才返回。
+- 格式：Sync()
+- 参数数量：0
+- 支持端口：29999
+- 返回：`done`
+
+​
 
 # 4.通信协议----实时反馈端口
 
@@ -950,31 +1074,42 @@
   - [ ] 优先级：上电<空闲<拖拽=运行<下电<报警
   - [ ] 其中报警优先级最高，其他状态同时存在时，若有报警，先将状态置9；
 
+
+
+其中Program state返回状态如下：
+
+- 停止状态	返回0
+- 暂停状态返回1
+- 运行状态返回2
+
+
+
 如下表所示为实时反馈端口支持的运动命令协议，实时反馈端口仅接收命令不做反馈；
 
-| 指令         | 描述                          |
-| ---------- | --------------------------- |
-| MovJ       | 点到点运动，目标点位为笛卡尔点位。           |
-| MovL       | 直线运动，目标点位为笛卡尔点位             |
-| JointMovJ  | 点到点运动，目标点位为关节点位             |
-| Jump       | 门型运动，仅支持笛卡尔点位               |
-| RelMovJ    | 以点到点方式运动至笛卡尔偏移位置            |
-| RelMovL    | 以直线运动至笛卡尔偏移位置               |
-| MovLIO     | 直线运动过程中并行设置数字输出端口的状态，可设置多组  |
-| MovJIO     | 点到点运动过程中并行设置数字输出端口的状态，可设置多组 |
-| Arc        | 圆弧运动。需结合其他运动指令完成圆弧运动。       |
-| Circle     | 整圆运动，需结合其他运动指令完成整圆运动        |
-| ServoJ     | 基于关节空间的动态跟随命令               |
-| ServoP     | 基于笛卡尔空间的动态跟随命令              |
-| Sync       | 阻塞程序执行队列指令，待所有队列指令执行完才返回    |
-| StartTrace | 轨迹拟合                        |
-| StartPath  | 轨迹复现                        |
+| 指令           | 描述                          |
+| ------------ | --------------------------- |
+| MovJ         | 点到点运动，目标点位为笛卡尔点位。           |
+| MovL         | 直线运动，目标点位为笛卡尔点位             |
+| JointMovJ    | 点到点运动，目标点位为关节点位             |
+| Jump         | 门型运动，仅支持笛卡尔点位               |
+| RelMovJ      | 以点到点方式运动至笛卡尔偏移位置            |
+| RelMovL      | 以直线运动至笛卡尔偏移位置               |
+| MovLIO       | 直线运动过程中并行设置数字输出端口的状态，可设置多组  |
+| MovJIO       | 点到点运动过程中并行设置数字输出端口的状态，可设置多组 |
+| Arc          | 圆弧运动。需结合其他运动指令完成圆弧运动。       |
+| Circle       | 整圆运动，需结合其他运动指令完成整圆运动        |
+| ServoJ       | 基于关节空间的动态跟随命令               |
+| ServoP       | 基于笛卡尔空间的动态跟随命令              |
+| MoveJog      | 关节点动                        |
+| StartTrace   | 轨迹拟合                        |
+| StartPath    | 轨迹复现                        |
+| StartFCTrace | 带力控的轨迹拟合                    |
 
 ## 4.1 MovJ
 
 - 功能：点到点运动，目标点位为笛卡尔点位。
 
-- 格式：MovJ(X,Y,Z,A,B,C)
+- 格式：MovJ(X,Y,Z,Rx,Ry,Rz)
 
 - 参数数量：6
 
@@ -987,9 +1122,9 @@
   | X    | double | X 轴位置，单位：毫米 |
   | Y    | double | Y 轴位置，单位：毫米 |
   | Z    | double | Z 轴位置，单位：毫米 |
-  | A    | double | A 轴位置，单位：度  |
-  | B    | double | B 轴位置，单位：度  |
-  | C    | double | C 轴位置，单位：度  |
+  | Rx   | double | Rx 轴位置，单位：度 |
+  | Ry   | double | Ry 轴位置，单位：度 |
+  | Rz   | double | Rz 轴位置，单位：度 |
 
 - 示例：
 
@@ -1001,7 +1136,7 @@
 
 - 功能：直线运动，目标点位为笛卡尔点位。
 
-- 格式：MovL(X,Y,Z,A,B,C)
+- 格式：MovL(X,Y,Z,Rx,Ry,Rz)
 
 - 参数数量：6
 
@@ -1014,9 +1149,9 @@
   | X    | double | X 轴位置，单位：毫米 |
   | Y    | double | Y 轴位置，单位：毫米 |
   | Z    | double | Z 轴位置，单位：毫米 |
-  | A    | double | A 轴位置，单位：度  |
-  | B    | double | B 轴位置，单位：度  |
-  | C    | double | C 轴位置，单位：度  |
+  | Rx   | double | Rx 轴位置，单位：度 |
+  | Ry   | double | Ry 轴位置，单位：度 |
+  | Rz   | double | Rz 轴位置，单位：度 |
 
 - 示例：
 
@@ -1102,7 +1237,7 @@
 
 - 功能：在直线运动时并行设置数字输出端口状态，目标点位为笛卡尔点位。
 
-- 格式：MovLIO(X,Y,Z,A,B,C,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status})
+- 格式：MovLIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status})
 
 - 参数数量：10
 
@@ -1115,9 +1250,9 @@
   | X        | double | X 轴位置，单位：毫米                              |
   | Y        | double | Y 轴位置，单位：毫米                              |
   | Z        | double | Z 轴位置，单位：毫米                              |
-  | A        | double | A 轴位置，单位：度                               |
-  | B        | double | B 轴位置，单位：度                               |
-  | C        | double | C 轴位置，单位：度                               |
+  | Rx       | double | Rx 轴位置，单位：度                              |
+  | Ry       | double | Ry 轴位置，单位：度                              |
+  | Rz       | double | Rz 轴位置，单位：度                              |
   | Mode     | int    | 设置Distance模式，0：Distance为距离百分比；1：Distance为离起始点或目标点的距离 |
   | Distance | int    | 运行指定的距离:  若Mode为0，则Distance表示起始点与目标点之间距离的百分比，取值范围：0~100; 若Distance取值为正，则表示离起始点的距离; 若Distance取值为负，则表示离目标点的距离 |
   | Index    | int    | 数字输出索引，取值范围：1~24                         |
@@ -1131,7 +1266,7 @@
 
 - 功能：点到点运动时并行设置数字输出端口状态，目标点位为笛卡尔点位。
 
-- 格式：MovJIO(X,Y,Z,A,B,C,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status})
+- 格式：MovJIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status})
 
 - 参数数量：不固定
 
@@ -1144,9 +1279,9 @@
   | X        | double | X 轴位置，单位：毫米                              |
   | Y        | double | Y 轴位置，单位：毫米                              |
   | Z        | double | Z 轴位置，单位：毫米                              |
-  | A        | double | A 轴位置，单位：度                               |
-  | B        | double | B 轴位置，单位：度                               |
-  | C        | double | C 轴位置，单位：度                               |
+  | Rx       | double | Rx轴位置，单位：度                               |
+  | Ry       | double | Ry 轴位置，单位：度                              |
+  | Rz       | double | Rz轴位置，单位：度                               |
   | Mode     | int    | 设置Distance模式，0：Distance为距离百分比；1：Distance为离起始点或目标点的距离 |
   | Distance | int    | 运行指定的距离:  若Mode为0，则Distance表示起始点与目标点之间距离的百分比，取值范围：0~100; 若Distance取值为正，则表示离起始点的距离; 若Distance取值为负，则表示离目标点的距离 |
   | Index    | int    | 数字输出索引，取值范围：1~24                         |
@@ -1162,7 +1297,7 @@
 
   ​		该指令需结合其他运动指令确定圆弧起始点。
 
-- 格式：Arc(X1,Y1,Z1,A1,B1,C1,X2,Y2,Z2,A2,B2,C2)
+- 格式：Arc(X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2)
 
 - 参数数量：12
 
@@ -1175,15 +1310,15 @@
   | X1   | double | 表示圆弧中间点X1 轴位置，单位：毫米 |
   | Y1   | double | 表示圆弧中间点Y1 轴位置，单位：毫米 |
   | Z1   | double | 表示圆弧中间点Z1 轴位置，单位：毫米 |
-  | A1   | double | 表示圆弧中间点A1 轴位置，单位：度  |
-  | B1   | double | 表示圆弧中间点B1 轴位置，单位：度  |
-  | C1   | double | 表示圆弧中间点C1 轴位置，单位：度  |
+  | Rx1  | double | 表示圆弧中间点Rx1轴位置，单位：度  |
+  | Ry1  | double | 表示圆弧中间点Ry1轴位置，单位：度  |
+  | Rz1  | double | 表示圆弧中间点Rz1轴位置，单位：度  |
   | X2   | double | 表示圆弧结束点X2 轴位置，单位：毫米 |
   | Y2   | double | 表示圆弧结束点Y2 轴位置，单位：毫米 |
   | Z2   | double | 表示圆弧结束点Z2 轴位置，单位：毫米 |
-  | A2   | double | 表示圆弧结束点A2 轴位置，单位：度  |
-  | B2   | double | 表示圆弧结束点B2 轴位置，单位：度  |
-  | C2   | double | 表示圆弧结束点C2 轴位置，单位：度  |
+  | Rx2  | double | 表示圆弧结束点Rx2轴位置，单位：度  |
+  | Ry2  | double | 表示圆弧结束点Ry2轴位置，单位：度  |
+  | Rz2  | double | 表示圆弧结束点Rz2 轴位置，单位：度 |
 
 - 示例：
 
@@ -1191,7 +1326,7 @@
 
 - 功能：：整圆运动，需结合其他运动指令完成整圆运动。
 
-- 格式：Circle(count,X1,Y1,Z1,A1,B1,C1,X2,Y2,Z2,A2,B2,C2)
+- 格式：Circle(count,X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2)
 
 - 参数数量：13
 
@@ -1205,15 +1340,15 @@
   | X1    | double | X1 轴位置，单位：毫米 |
   | Y1    | double | Y1 轴位置，单位：毫米 |
   | Z1    | double | Z1 轴位置，单位：毫米 |
-  | A1    | double | A1 轴位置，单位：度  |
-  | B1    | double | B1 轴位置，单位：度  |
-  | C1    | double | C1 轴位置，单位：度  |
+  | Rx1   | double | Rx1轴位置，单位：度  |
+  | Ry1   | double | Ry1轴位置，单位：度  |
+  | Rz1   | double | Rz1轴位置，单位：度  |
   | X2    | double | X2 轴位置，单位：毫米 |
   | Y2    | double | Y2 轴位置，单位：毫米 |
   | Z2    | double | Z2 轴位置，单位：毫米 |
-  | A2    | double | A2 轴位置，单位：度  |
-  | B2    | double | B2 轴位置，单位：度  |
-  | C2    | double | C2 轴位置，单位：度  |
+  | Rx2   | double | Rx2轴位置，单位：度  |
+  | Ry2   | double | Ry2轴位置，单位：度  |
+  | Rz2   | double | Rz2轴位置，单位：度  |
 
 - 示例：
 
@@ -1248,7 +1383,7 @@
 
 - 功能：基于笛卡尔空间的动态跟随命令。
 
-- 格式：ServoP(X1,Y1,Z1,A1,B1,C1)
+- 格式：ServoP(X1,Y1,Z1,Rx1,Ry1,Rz1)
 
 - 参数数量：6
 
@@ -1261,25 +1396,43 @@
   | X1   | double | X 1轴位置，单位：毫米 |
   | Y1   | double | Y 1轴位置，单位：毫米 |
   | Z1   | double | Z1 轴位置，单位：毫米 |
-  | A1   | double | A 1轴位置，单位：度  |
-  | B1   | double | B1 轴位置，单位：度  |
-  | C1   | double | C 1轴位置，单位：度  |
+  | Rx1  | double | Rx 1轴位置，单位：度 |
+  | Ry1  | double | Ry1 轴位置，单位：度 |
+  | Rz1  | double | Rz1轴位置，单位：度  |
 
 - 示例：
 
   ServoP(-500,100,200,150,0,90）
 
 
-## 4.13 Sync
+## 4.13 MoveJog
 
-- 功能：阻塞程序执行队列指令，待所有队列指令执行完才返回。
-- 格式：Sync()
-- 参数数量：0
+- 功能：点动运动，不固定距离运动
+
+- 格式：MoveJog(axisID)
+
+- 参数数量：1
+
 - 支持端口：30003
+
+- **注意：命令下发后，须另外下发MoveJog()停止命令控制机器人停止运动；另下发非指定string内容的参数都会导致机器人停止；**
+
+- 参数详解：1
+
+  | 参数名    | 类型     | 含义                                       |
+  | ------ | ------ | ---------------------------------------- |
+  | axisID | string | 点动运动轴<br />J1+ 表示关节1正方向运动        J1- 表示关节1负方向运动 <br />J2+ 表示关节2正方向运动        J2- 表示关节2负方向运动<br />J3+ 表示关节3正方向运动        J3- 表示关节3负方向运动<br />J4+ 表示关节4正方向运动        J4- 表示关节4负方向运动<br />J5+ 表示关节5正方向运动        J5- 表示关节5负方向运动<br />J6+ 表示关节6正方向运动        J6- 表示关节6负方向运动<br />X+ 表示X轴正方向运动             X- 表示X轴负方向运动 <br />Y+ 表示Y轴正方向运动             Y- 表示Y轴负方向运动<br />Z+ 表示Z轴正方向运动             Z- 表示Z轴负方向运动<br />Rx+ 表示Rx轴正方向运动        Rx- 表示Rx轴负方向运动<br />Ry+ 表示Ry轴正方向运动        Ry- 表示Ry轴负方向运动<br />Rz+ 表示Rz轴正方向运动        Rz- 表示Rz轴负方向运动<br /> |
+
+- 示例：J2负方向运动，再停止点动
+
+  MoveJog(j2-)
+
+  MoveJog()
+
 
 ## 4.14 StartTrace
 
-- 功能：轨迹拟合。
+- 功能：轨迹拟合。(轨迹文件笛卡尔点)
 
 - 格式：StartTrace(traceName)
 
@@ -1287,33 +1440,35 @@
 
 - 支持端口：30003
 
+- **备注：用户可以通过获取RobotMode查询机器人运行状态，若在ROBOT_MODE_RUNNING表示机器人在轨迹拟合运行中，达到ROBOT_MODE_IDLE表示轨迹拟合运行完成，ROBOT_MODE_ERROR表示报警；**
+
 - 参数详解：1
 
   | 参数名       | 类型     | 含义                                       |
   | --------- | ------ | ---------------------------------------- |
   | traceName | string | 轨迹文件名（含后缀）<br /> 轨迹路径存放在/dobot/userdata/project/process/trajectory/ |
 
-- 示例：，
+- 示例：先获取名字recv_string的轨迹的首个关节点{x,y,z,rx,ry,rz}，在点到点运动{x,y,z,rx,ry,rz}后，在下发名字recv_string做轨迹拟合；
 
-  local recv_string=”demo.json”
+  GetTraceStartPose(recv_string)
 
-  local P1 = GetTraceStartPose(recv_string)
-
-  JointMoveJ(P1)
+  MovJ(x,y,z,rx,ry,rz)
 
   StartTrace(recv_string)
 
 ## 4.15 StartPath
 
-- 功能：轨迹复现。
+- 功能：轨迹复现。(轨迹文件关节点)
 
 - 格式：StartPath(traceName,const,cart)
 
-- 参数数量：1
+- 参数数量：3
 
 - 支持端口：30003
 
-- 参数详解：1
+- **备注：用户可以通过获取RobotMode查询机器人运行状态，若在ROBOT_MODE_RUNNING表示机器人在轨迹复现运行中，达到ROBOT_MODE_IDLE表示轨迹复现运行完成，ROBOT_MODE_ERROR表示报警；**
+
+- 参数详解：3
 
   | 参数名       | 类型     | 含义                                       |
   | --------- | ------ | ---------------------------------------- |
@@ -1321,13 +1476,11 @@
   | const     | int    | const=1时，匀速复现，轨迹中的停顿及死区会被移除;<br />const=0时，按照原速复现； |
   | cart      | int    | cart=1时，按笛卡尔路径复现；<br />cart=0时，按关节路径复现；  |
 
-- 示例：按照原速复现，按笛卡尔路径匀速复现
+- 示例：  先获取名字recv_string的轨迹的首个点{j1,j2,j3,j4,j5,j6}，在点到点运动{j1,j2,j3,j4,j5,j6}后，在下发名字recv_string按照原速复现，按笛卡尔路径匀速复现；
 
-  local recv_string=”demo.json”
+  GetPathStartPose(recv_string)
 
-  local P1 = GetPathStartPose(recv_string)
-
-  Go(P1)
+  JointMoveJ(j1,j2,j3,j4,j5,j6)
 
   StartPath(recv_string,0,1)
 
@@ -1336,16 +1489,30 @@
   
 
 
+- 功能：带力控的轨迹拟合。(轨迹文件笛卡尔点)
 
+- 格式：StartFCTrace(traceName)
 
+- 参数数量：1
 
+- 支持端口：30003
 
+- **备注：用户可以通过获取RobotMode查询机器人运行状态，若在ROBOT_MODE_RUNNING表示机器人在轨迹复现运行中，达到ROBOT_MODE_IDLE表示轨迹复现运行完成，ROBOT_MODE_ERROR表示报警；**
 
+- 参数详解：1
 
+  | 参数名       | 类型     | 含义                                       |
+  | --------- | ------ | ---------------------------------------- |
+  | traceName | string | 轨迹文件名（含后缀）<br /> 轨迹路径存放在/dobot/userdata/project/process/trajectory/ |
 
+- 示例：先获取名字recv_string的轨迹的首个点{x,y,z,rx,ry,rz}，在点到点运动{x,y,z,rx,ry,rz}后，在下发名字recv_string按照原速复现，按笛卡尔路径匀速复现；
 
+  GetTraceStartPose(recv_string)
 
+  MovJ(x,y,z,rx,ry,rz)
 
+  StartFCTrace(recv_string)
 
+  ​
 
 
