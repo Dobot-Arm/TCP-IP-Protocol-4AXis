@@ -1485,9 +1485,7 @@
   StartPath(recv_string,0,1)
 
   
-
-  
-
+## 4.16 StartFCTrace
 
 - 功能：带力控的轨迹拟合。(轨迹文件笛卡尔点)
 
