@@ -1,24 +1,6 @@
+![](README.assets/pic1.jpg)
 
-
-<div align=center><img src="pic1.jpg" style="zoom:100%;" /></div>
-
-<div align=center><img src="pic2.jpg" style="zoom:100%;" /></div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![](README.assets/pic2.jpg)
 
 # 0.Changelog
 
@@ -44,7 +26,9 @@
 
 ​	CR机器人现支持两种远程控制方式：**远程I/O模式、远程Modbus模式**；具体控制方式详见《Dobot-CR-Series-Robot-APP-User-Guide-V3.7》文档中软件使用说明->设置->远程控制章节中；
 
-​	以上两种方式主要针对**远程运行脚本的控制**；由于基于TCP/IP的通讯具有成本低、可靠性高、实用性强、性能高等特点；许多工业自动化项目对支持TCP/IP协议控制机器人需求广泛，因此CR机器人将设计在TCP/IP协议的基础上，提供了丰富的接口用于与外部设备的交互；
+​	以上两种方式主要针对**远程运行脚本的控制**；由于基于TCP/IP的通讯具有成本低、可靠性高、实用性强、性能高等特点；许多工业自动化项目对支持TCP/IP协议控制机器人需求广泛，因此CR/MG400/M1Pro机器人将设计在TCP/IP协议的基础上，提供了丰富的接口用于与外部设备的交互；
+
+​	关于TCP/IP协议的支持，CR系列机器人的控制器版本需V3.5.1.9及以上，MG400/M1Pro机器人的控制器版本需V1.5.4.0及以上。
 
 # 2.消息格式
 
@@ -1770,6 +1754,7 @@ GetInRegs(0,4000,3)
 
   StartPath(recv_string,0,1)
 
+  
 ## 4.16 StartFCTrace
 
 - 功能：带力控的轨迹拟合。(轨迹文件笛卡尔点)
