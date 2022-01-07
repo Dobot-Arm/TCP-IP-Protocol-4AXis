@@ -19,6 +19,12 @@
 - V1.9-2021/10/25:跟进PX的反馈，优化正逆解参数内容；新增获取错误码接口；实时反馈端口新增获取用户坐标、工具坐标以及手系的参数；
 - V1.10-2021/10/27:跟进PX的需求，使能新增四个可选参数((负载 + 偏心)、实时数据上报负载参数、实时数据上报用户/工具坐标系的矩阵、实时数据上报关节实际力矩、实时数据上报速度加速度等相关的比率共计9个；
 - V1.10-2021/11/03:PX分支拆分30003端口为30003和30004；其中30003端口仅作为下发运行指令相关接口；30004端口仅做为实时反馈端口；注意：30003端口的拆分预计在控制器3.5.2版本实现，3.5.1暂时还是一个30003端口进行实时反馈以及下发运动相关指令；
+- V2.0-2021/11/24:对TCPIP功能做较大的优化；主要优化内容：定义返回格式 ；RobotMode返回修改；新增30005以及30006反馈机器人数据端口等；CR控制器支持版本在3.5.2版本及以上；
+- V2.0-2021/11/25:优化RobotMode返回的运行的歧义,为保持与控制器3.5.1版本兼容性，之前351版本关键机器人状态返回值没有做修改；如：空闲、拖拽、运行、报警状态，新增抱闸松开、轨迹录制、暂停以及点动等；实时反馈描述的统一；根据建议将30005端口的反馈周期改成200ms；
+- V2.1-2021/11/30：新增DI、ToolDI、AI、ToolAI、DIGroup、DOGroup获取数字输入信号、末端数字输入、模拟输入、末端模拟输入、组数字输入以及组数字输出指令；轨迹复现、轨迹拟合以及带力控的轨迹拟合指令新增返回运行到第几个点的参数；实时反馈数据新增当前六维力数据原始值；
+- V2.1-2021/12/14：LK项目新增实时反馈的按钮板五个按钮的触发信号；
+- V2.1-2021/12/21： 新增机器类型实时反馈并表格说明值代表机器型号；
+- V2.2-2021/12/22： 修复一些运行指令可选参数参数错误以及统一运动指令AccL和AccJ可选参数；
 
 
 
@@ -32,7 +38,15 @@
 
 # 2.消息格式
 
-​	根据设计，CR机器人可以开启29999、30003以及30004服务器端口；29999服务器端口(以下简称Dashboard端口)通过一发一收的方式负责接收一些简单的指令，即**Dashboard端口接收到客户端约定消息格式后会将结果反馈客户端**；30003服务器端口**接收客户端的约定消息格式，并实时反馈**；30004服务器端口(以下简称实时反馈端口)**每20ms反馈机器人的信息**，(注意：30003端口的拆分成30003和30004端口预计在控制器3.5.2版本实现，3.5.1暂时还是一个30003端口进行实时反馈以及下发运动相关指令；3.5.2版本才实现30004端口实时反馈)
+​	根据设计，CR机器人会开启29999、30003、30004、30005以及30006服务器端口；
+
+​	29999服务器端口(以下简称Dashboard端口)通过一发一收的方式负责接收一些设置以及运动控制相关的指令，即**Dashboard端口接收到客户端约定消息格式后会将结果反馈客户端**；
+
+​	30003服务器端口仅**接收客户端的约定消息格式，不做反馈**；(注意：30003端口的拆分成30003和30004端口预计在控制器3.5.2版本实现，3.5.1暂时还是一个30003端口进行实时反馈以及下发运动相关指令；)
+
+​	30004服务器端口(以下简称实时反馈端口)**每8ms反馈机器人的信息；**30005服务器端口**每200ms反馈机器人的信息**，30006端口为**可配置**的反馈机器人信息端口(默认为每**50ms**反馈)；
+
+​	说明：TCPIP远程控制指令不区分大小写格式；如ENABLEROBOT()指令或者enablerobot()指令或者eNabLErobOt()指令控制器都会按照使能的指令执行；
 
 ## 2.1 下发格式
 
@@ -43,23 +57,28 @@
 
 ## 2.2 返回格式
 
-### 2.2.1接收成功返回：
+### 2.2.1 返回：
 
-​	`"消息名称(Param1,Param2,Param3……Paramn)"`
+​	`"ErrorID,{value,...,valuen},消息名称(Param1,Param2,Param3……Paramn);"`
 
-​	消息格式如上所示，成功返回下发的消息名称。
+​	消息格式如上所示，ErrorID为0时表示命令接收成功；返回非0则代表命令有错误，具体的错误描述见第六章节;{value1,value2,value3,...,valuen}表示返回值，没有返回值则返回{}；消息名称(Param1,Param2,Param3……Paramn)指下发的内容。
 
-### 2.2.2 失败返回：
+​	例：
 
-​	`"could not understand:'消息名称(Param1,Param2,Param3……Paramn)'"`
+​		MovL(-500,100,200,150,0,90)
+​		返回：0,{},MovL(-500,100,200,150,0,90);   //0表示接收成功 没有返回值返回{}
 
-​	消息格式如上所示，失败返回could not understand:'消息名称(Param1,Param2,Param3……Paramn)'。
+
+​		Mov(-500,100,200,150,0,90)
+​		报警： -10000,{},Mov(-500,100,200,150,0,90);   //-10000表示命令错误  没有返回值返回{}
 
 
 
 # 3.通信协议---Dashboard端口
 
-​	上位机可以通过29999端口直接发送一些简单的指令给机器人，这些指令CR自己定义的，这些功能被称为Dashboard。如表是Dashboard的指令列表。可以通过Dashboard的指令实现对机器人使能/下使能、复位等控制；
+​	上位机可以通过29999端口直接发送一些设置相关的指令给机器人，这些指令CR自己定义的，这些功能被称为Dashboard。如表是Dashboard的指令列表。可以通过Dashboard的指令实现对机器人使能/下使能、复位等控制；
+
+​	机器人设置相关指令如下：
 
 | 指令                | 描述                                       |
 | ----------------- | ---------------------------------------- |
@@ -113,6 +132,12 @@
 | GetHoldRegs       | 读保存寄存器                                   |
 | SetHoldRegs       | 写保存寄存器                                   |
 | GetErrorID        | 获取错误ID                                   |
+| DI                | 获取数字量输入端口状态                              |
+| ToolDI            | 获取末端数字量输入端口状态                            |
+| AI                | 获取模拟量输入端口电压值                             |
+| ToolAI            | 获取末端模拟量输入端口电压值                           |
+| DIGroup           | 获取输入组端口状态                                |
+| DOGroup           | 设置数字输出组端口状态                              |
 
 
 
@@ -122,26 +147,31 @@
 
 - 格式：EnableRobot()
 
-- 可选参数数量：0/1/4  （不填参数，返回0；填一个参数默认为负载重量参数,返回0；填四个参数分别表示负载重量、X方向偏心距、Y方向偏心距以及Z方向偏心距，返回0;失败返回1；）
-
 - 支持端口：29999
 
 - 可选参数详解：
 
-  | 参数名     | 类型     | 含义        |
-  | ------- | ------ | --------- |
-  | load    | double | 负载重量kg    |
-  | centerX | double | X方向偏心距离mm |
-  | centerY | double | Y方向偏心距离mm |
-  | centerZ | double | Z方向偏心距离mm |
+  | 参数名     | 类型     | 含义                           |
+  | ------- | ------ | ---------------------------- |
+  | load    | double | 负载重量kg，取值范围：0~机器额定负载；        |
+  | centerX | double | X方向偏心距离mm，取值范围：-500mm~500mm； |
+  | centerY | double | Y方向偏心距离mm，取值范围：-500mm~500mm； |
+  | centerZ | double | Z方向偏心距离mm，取值范围：-500mm~500mm； |
 
 
+
+- 返回：
+
+  ErrorID,{},EnableRobot();
 
 - 示例：
 
   EnableRobot()
 
-  返回：0
+- 说明：**可选参数数量：0/1/4**  （不填参数，正常接收ErrorID返回0；填一个参数默认为负载重量参数,ErrorID返回0；填四个参数分别表示负载重量、X方向偏心距、Y方向偏心距以及Z方向偏心距，ErrorID返回0;失败返回错误码,参考第六章；）
+
+  ​
+
 
 
 ## 3.2 DisableRobot
@@ -153,6 +183,10 @@
 - 参数数量：0
 
 - 支持端口：29999
+
+- 返回：
+
+  ErrorID,{},DisableRobot();
 
 - 示例：
 
@@ -172,7 +206,9 @@
 
 
 
-- 参数详解：
+- 返回：
+
+  ErrorID,{},ClearError();
 
 - 示例：
 
@@ -190,7 +226,9 @@
 
 
 
-- 参数详解：
+- 返回：
+
+  ErrorID,{},ResetRobot();
 
 - 示例：
 
@@ -208,9 +246,13 @@
 
 - 参数详解：1
 
-  | 参数名   | 类型   | 含义                          |
-  | ----- | ---- | --------------------------- |
-  | ratio | int  | 运动速度比例，取值范围：0~100，但不包括0和100 |
+  | 参数名   | 类型   | 含义                |
+  | ----- | ---- | ----------------- |
+  | ratio | int  | 运动速度比例，取值范围：1~100 |
+
+- 返回：
+
+  ErrorID,{},SpeedFactor(ratio);
 
 - 示例：
 
@@ -233,6 +275,10 @@
   | ----- | ---- | -------------------- |
   | index | int  | 选择已标定的用户坐标系，取值范围：0~9 |
 
+- 返回：
+
+  ErrorID,{},User(index);
+
 - 示例：
 
   User(1)
@@ -253,6 +299,10 @@
   | ----- | ---- | -------------------- |
   | index | int  | 选择已标定的工具坐标系，取值范围：0~9 |
 
+- 返回：
+
+  ErrorID,{},Tool(index);
+
 - 示例：
 
   Tool(1)
@@ -267,25 +317,32 @@
 
 - 支持端口：29999
 
+- 返回值：                             
+
+  | 模式   | 描述                    | 备注         |
+  | ---- | --------------------- | ---------- |
+  | 1    | ROBOT_MODE_INIT       | 初始化        |
+  | 2    | ROBOT_MODE_BRAKE_OPEN | 抱闸松开       |
+  | 3    |                       | 保留位        |
+  | 4    | ROBOT_MODE_DISABLED   | 未使能(抱闸未松开) |
+  | 5    | ROBOT_MODE_ENABLE     | 使能(空闲)     |
+  | 6    | ROBOT_MODE_BACKDRIVE  | 拖拽         |
+  | 7    | ROBOT_MODE_RUNNING    | 运行状态       |
+  | 8    | ROBOT_MODE_RECORDING  | 拖拽录制       |
+  | 9    | ROBOT_MODE_ERROR      | 报警         |
+  | 10   | ROBOT_MODE_PAUSE      | 暂停状态       |
+  | 11   | ROBOT_MODE_JOG        | 点动         |
+
+
+- 返回：
+
+  ErrorID,{Value},RobotMode();    //Value为返回模式值
+
 - 示例：
 
   RobotMode()
 
-- 返回值：                             
-
-  | 模式   | 描述                           | 备注     |
-  | ---- | ---------------------------- | ------ |
-  | -1   | ROBOT_MODE_NO_CONTROLLER     | 没有控制器  |
-  | 0    | ROBOT_MODE_DISCONNECTED      | 没有连接   |
-  | 1    | ROBOT_MODE_CONFIRM_SAFETY    | 配置安全参数 |
-  | 2    | ROBOT_MODE_BOOTING           | 启动     |
-  | 3    | ROBOT_MODE_POWER_OFF         | 下电     |
-  | 4    | ROBOT_MODE_POWER_ON          | 上电     |
-  | 5    | ROBOT_MODE_IDLE              | 空闲     |
-  | 6    | ROBOT_MODE_BACKDRIVE         | 拖拽     |
-  | 7    | ROBOT_MODE_RUNNING           | 运行     |
-  | 8    | ROBOT_MODE_UPDATING_FIRMWARE | 更新固件   |
-  | 9    | ROBOT_MODE_ERROR             | 报警     |
+- 说明：为保持与控制器3.5.1版本兼容性，之前关键机器人状态返回值没有做修改；如：空闲、拖拽、运行、报警状态；新增抱闸松开、轨迹录制、暂停以及点动等；
 
 ## 3.9 PayLoad
 
@@ -301,10 +358,14 @@
 
 - 参数详解：2
 
-  | 参数名     | 类型     | 含义        |
-  | ------- | ------ | --------- |
-  | weight  | double | 负载重量 kg   |
-  | inertia | double | 负载惯量 kgm² |
+  | 参数名     | 类型     | 含义                     |
+  | ------- | ------ | ---------------------- |
+  | weight  | double | 负载重量 kg，取值范围：0~机器额定负载； |
+  | inertia | double | 负载惯量 kgm²              |
+
+- 返回：
+
+  ErrorID,{},PayLoad(weight,inertia);   
 
 - 示例：
 
@@ -329,6 +390,10 @@
   | index  | int  | 数字输出索引，取值范围：1~16     |
   | status | int  | 数字输出端口状态，1：高电平；0：低电平 |
 
+- 返回：
+
+  ErrorID,{},DO(index,status);   
+
 - 示例：
 
   DO(1,1)
@@ -351,6 +416,10 @@
   | ------ | ---- | -------------------- |
   | index  | int  | 数字输出索引，取值范围：1~16     |
   | status | int  | 数字输出端口状态，1：高电平；0：低电平 |
+
+- 返回：
+
+  ErrorID,{},DOExecute(index,status);   
 
 - 示例：
 
@@ -375,6 +444,10 @@
   | index  | int  | 数字输出索引，取值范围：1/2      |
   | status | int  | 数字输出端口状态，1：高电平；0：低电平 |
 
+- 返回：
+
+  ErrorID,{},ToolDO(index,status);  
+
 - 示例：
 
   ToolDO(1,1)
@@ -397,6 +470,10 @@
   | ------ | ---- | -------------------- |
   | index  | int  | 数字输出索引，取值范围：1/2      |
   | status | int  | 数字输出端口状态，1：高电平；0：低电平 |
+
+- 返回：
+
+  ErrorID,{},ToolDOExecute(index,status);  
 
 - 示例：
 
@@ -421,6 +498,10 @@
   | index | int    | 模拟输出索引，取值范围：1/2       |
   | value | double | 对应index的电压值，取值范围0~10V |
 
+- 返回：
+
+  ErrorID,{},AO(index,value);  
+
 - 示例：
 
   AO(1,2)
@@ -444,6 +525,10 @@
   | index | int    | 模拟输出索引，取值范围：1/2       |
   | value | double | 对应index的电压值，取值范围0~10V |
 
+- 返回：
+
+  ErrorID,{},AOExecute(index,value);
+
 - 示例：
 
   AOExecute(1,2)
@@ -453,7 +538,7 @@
 
 - 功能：设置关节加速度比例。该指令仅对MovJ、MovJIO、MovJR、 JointMovJ指令有效
 
-- 格式：AccJ,R)
+- 格式：AccJ(R)
 
 - 参数数量：1
 
@@ -466,6 +551,10 @@
   | 参数名  | 类型   | 含义                  |
   | ---- | ---- | ------------------- |
   | R    | int  | 关节加速度百分比，取值范围：1~100 |
+
+- 返回：
+
+  ErrorID,{},AccJ(R);
 
 - 示例：
 
@@ -489,6 +578,10 @@
   | ---- | ---- | ------------------- |
   | R    | int  | 笛卡尔加速度比例，取值范围：1~100 |
 
+- 返回：
+
+  ErrorID,{},AccL(R);
+
 - 示例：
 
   AccL(50)
@@ -510,6 +603,10 @@
   | 参数名  | 类型   | 含义                |
   | ---- | ---- | ----------------- |
   | R    | int  | 关节速度比例，取值范围：1~100 |
+
+- 返回：
+
+  ErrorID,{},SpeedJ(R);
 
 - 示例：
 
@@ -533,6 +630,10 @@
   | ---- | ---- | ------------------ |
   | R    | int  | 笛卡尔速度比例，取值范围：1~100 |
 
+- 返回：
+
+  ErrorID,{},SpeedL(R);
+
 - 示例：
 
   SpeedL(50)
@@ -554,6 +655,10 @@
   | 参数名   | 类型   | 含义              |
   | ----- | ---- | --------------- |
   | Index | int  | 门型参数索引，取值范围：0~9 |
+
+- 返回：
+
+  ErrorID,{},Arch(Index);
 
 - 示例：
 
@@ -577,6 +682,10 @@
   | ---- | ---- | ----------------- |
   | R    | int  | 平滑过渡比例，取值范围：1~100 |
 
+- 返回：
+
+  ErrorID,{},CP(R);
+
 - 示例：
 
   CP(50)
@@ -595,9 +704,15 @@
   | ------ | ---- | -------------------- |
   | zValue | int  | 最大抬升高度，不能超过机械臂Z轴极限位置 |
 
+- 返回：
+
+  ErrorID,{},LimZ(zValue);
+
 - 示例：
 
   LimZ(80)
+
+- 说明：**此条指令已经废弃，不建议使用；**
 
 ## 3.23 SetArmOrientation
 
@@ -616,6 +731,10 @@
   | ForN    | int  | 臂方向腕部是否翻转(1/-1)<br />  1：腕不翻转<br />-1：腕翻转 |
   | Config6 | int  | 第六轴角度标识<br />  -1,-2...：第6轴角度为[0,-90]为-1；[-90,-180]为-2；以此类推<br />1,2...：第6轴角度为[0,90]为1；[90,180]为2；以此类推 |
 
+- 返回：
+
+  ErrorID,{},LimZ(zValue);
+
 - 示例：
 
   SetArmOrientation(1,1,-1,1)
@@ -623,15 +742,23 @@
 ## 3.24 PowerOn
 
 - 功能：机器人上电。 
-- 格式：PowerOn()
-- 参数数量：0
-- 支持端口：29999
-- **注意：机器人上电完成，需要等待大概10秒钟的时间进行使能操作；**
 
+- 格式：PowerOn()
+
+- 参数数量：0
+
+- 支持端口：29999
+
+- 返回：
+
+  ErrorID,{},PowerOn();
 
 - 示例：
 
   PowerOn()
+
+- **说明：机器人上电到完成，需要等待大概10秒钟的时间再进行使能操作；**
+
 
 ## 3.25 RunScript
 
@@ -650,6 +777,10 @@
   | projectName | string | 脚本名称 |
 
 
+- 返回：
+
+  ErrorID,{},RunScript(projectName);
+
 - 示例：
 
   RunScript(demo)
@@ -663,6 +794,10 @@
 - 参数数量：0
 
 - 支持端口：29999
+
+- 返回：
+
+  ErrorID,{},StopScript();
 
 
 
@@ -680,6 +815,10 @@
 
 - 支持端口：29999
 
+- 返回：
+
+  ErrorID,{},PauseScript();
+
 
 
 - 示例：
@@ -696,14 +835,15 @@
 
 - 支持端口：29999
 
+- 返回：
+
+  ErrorID,{},ContinueScript();
+
 
 
 - 示例：
 
   ContinueScript()
-
-
-- ​
 
 
 ## 3.29 SetSafeSkin
@@ -722,6 +862,10 @@
   | ------ | ---- | --------------------------------- |
   | status | int  | status：电子皮肤开关状态，0：关闭电子皮肤；1：开启电子皮肤 |
 
+
+- 返回：
+
+  ErrorID,{},SetSafeSkin(status));
 
 - 示例：开启电子皮肤功能
 
@@ -744,9 +888,15 @@
   | status | int  | status：安全皮肤避障模式开关状态，0：关闭安全皮肤避障模式；1：开启安全皮肤避障功能 |
 
 
+- 返回：
+
+  ErrorID,{},SetObstacleAvoid(status);
+
 - 示例：开启安全皮肤避障功能
 
   SetObstacleAvoid(1)
+
+- 说明：**本条指令暂时废弃，不建议使用；**
 
 ## 3.31 GetTraceStartPose
 
@@ -767,11 +917,13 @@
 
 - 返回：
 
-  点位坐标值  {x,y,z,a,b,c}
+  ErrorID,{x,y,z,a,b,c},GetTraceStartPose(traceName);   //{x,y,z,a,b,c}指点位坐标值  
 
 - 示例：
 
   GetTraceStartPose(recv_string)
+
+- 说明：**本条指令在控制器3.5.2版本以及以上支持；**
 
 ## 3.32 GetPathStartPose
 
@@ -792,11 +944,13 @@
 
 - 返回：
 
-  关节点位坐标值 {j1,j2,j3,j4,j5,j6}
+  ErrorID,{j1,j2,j3,j4,j5,j6},GetTraceStartPose(traceName);   //{j1,j2,j3,j4,j5,j6}关节点位坐标值
 
 - 示例：
 
   GetPathStartPose(recv_string)
+
+- 说明：**本条指令在控制器3.5.2版本以及以上支持；**
 
 ## 3.33 PositiveSolution
 
@@ -821,13 +975,19 @@
   | User | int    | 选择已标定的用户坐标系 |
   | Tool | int    | 选择已标定的工具坐标系 |
 
-- 注意，需要已知：
+- 返回：
 
-  - 机器人的臂方向SetArmOrientation
+  ErrorID,{x,y,z,a,b,c},PositiveSolution(J1,J2,J3,J4,J5,J6,User,Tool);    //{x,y,z,a,b,c}指返回的空间位置  
 
 - 示例：下发关节角度返回当前的机器人末端的空间位置
 
   PositiveSolution(0,0,-90,0,90,0,1,1)
+
+- 说明，需要已知：
+
+  - 机器人的臂方向SetArmOrientation
+
+  ​
 
 ## 3.34 InverseSolution
 
@@ -857,13 +1017,15 @@
   | Config6 | 第六轴角度标识<br />  -1,-2...：第6轴角度为[0,-90]为-1；[-90,-180]为-2；以此类推<br />1,2...：第6轴角度为[0,90]为1；[90,180]为2；以此类推 | int    |
 
 
+- 返回：
 
+  ErrorID,{J1,J2,J3,J4,J5,J6},InverseSolution(X,Y,Z,Rx,Ry,Rz,User,Tool,LorR,UorD,ForN,Config6);  //{J1,J2,J3,J4,J5,J6}指返回的关节值
 
 - 示例：下发关节角度返回当前的机器人末端的空间位置
 
   InverseSolution(0,-247,1050,-90,0,180,0,0,1,1,1,1)
 
-  返回：0,{0,0,-90,0,90,0}
+  返回：0,{0,0,-90,0,90,0},InverseSolution(0,-247,1050,-90,0,180,0,0,1,1,1,1);
 
 
 ## 3.35 SetCollisionLevel
@@ -882,6 +1044,10 @@
   | ----- | ---- | ---------------------------------------- |
   | level | int  | level: 碰撞等级<br /> 0：关闭碰撞检测<br /> 1~5：等级越高越灵敏 |
 
+
+- 返回：
+
+  ErrorID,{},SetCollisionLevel(level);   
 
 - 示例：
 
@@ -903,13 +1069,19 @@
   | --------- | ------ | ---------------------------------------- |
   | traceName | string | 轨迹文件名（含后缀）<br /> 轨迹路径存放在/dobot/userdata/project/process/trajectory/ |
 
-- **备注：若用户下发不带参数的该指令，代表查询当前指令的结果；**返回：返回为-3表示文件内容错误，返回为-2表示文件不存在，返回为-1表示预处理没有完成；返回为0表示预处理完成，没有错误；返回大于0的结果表示当前返回结果对应的点位有问题；
+- 返回：
+
+  ErrorID,{},HandleTrajPoints(traceName);   
+
+- 说明：由于轨迹预处理计算结果会根据文件的大小不同算法处理时间会有差异，**若用户下发不带参数的该指令，代表查询当前指令的结果**；返回：返回为-3表示文件内容错误，返回为-2表示文件不存在，返回为-1表示预处理没有完成；返回为0表示预处理完成，没有错误；返回大于0的结果表示当前返回结果对应的点位有问题；
 
 - 示例：下发轨迹名为recv_string做预处理，然后在一定周期查询预处理结果；
 
   HandleTrajPoints(recv_string)
 
   HandleTrajPoints()
+
+- 说明：**本条指令在控制器3.5.2版本以及以上支持；**
 
 ## 3.37 GetSixForceData
 
@@ -921,13 +1093,15 @@
 
 - 支持端口：29999
 
-- 返回：当前六维力数据原始值；
+- 返回：
+
+   ErrorID,{Fx,Fy,Fz,Mx,My,Mz},GetSixForceData();     //{Fx,Fy,Fz,Mx,My,Mz}表示当前六维力数据原始值；
 
 - 示例：
 
    GetSixForceData()
 
-  返回：{0.0,0.0,0.0,0.0,0.0,0.0}
+  返回：0,{0.0,0.0,0.0,0.0,0.0,0.0},GetSixForceData();
 
 ## 3.38 GetAngle
 
@@ -939,13 +1113,15 @@
 
 - 支持端口：29999
 
-- 返回：机械臂当前位置的关节坐标值；
+- 返回：
+
+   ErrorID,{J1,J2,J3,J4,J5,J6},GetAngle();     //{J1,J2,J3,J4,J5,J6}表示当前位置的关节坐标值；
 
 - 示例：
 
    GetAngle()
 
-   返回：{0.0,0.0,90.0,0.0,-90.0,0.0}
+   返回：0,{0.0,0.0,90.0,0.0,-90.0,0.0},GetAngle(); 
 
 ## 3.39 GetPose
 
@@ -957,17 +1133,19 @@
 
 - 支持端口：29999
 
-- 返回：机械臂当前位置的笛卡尔坐标值；
+- 返回：
+
+  ErrorID,{X,Y,Z,Rx,Ry,Rz},GetPose();     //{X,Y,Z,Rx,Ry,Rz}表示当前位置的笛卡尔坐标值；
 
 - 示例：
 
   GetPose()
 
-  返回：{-473.0,-141.0,469.0,-180.0,0.0,90.0}
+  返回：0,{-473.0,-141.0,469.0,-180.0,0.0,90.0},GetPose();
 
 ## 3.40 EmergencyStop
 
-- 功能：急停，机器人记录
+- 功能：急停
 
 - 格式：EmergencyStop()
 
@@ -975,20 +1153,16 @@
 
 - 支持端口：29999
 
+- 返回：
+
+   ErrorID,{},EmergencyStop();   
+
 - 示例：
 
    EmergencyStop()
 
 
-## 3.41 Sync
-
-- 功能：阻塞程序执行队列指令，待所有队列指令执行完才返回。
-- 格式：Sync()
-- 参数数量：0
-- 支持端口：29999
-- 返回：done
-
-## 3.42 ModbusCreate(预计控制器352版本支持)
+## 3.41 ModbusCreate
 
 - 功能：创建modbus主站。 
 
@@ -1010,19 +1184,15 @@
 
 - 返回：
 
-  - err:
-
-    ​	0：创建Modbus主站成功
-
-    ​	1：创建Modbus主站失败
-
-  - index: 返回的主站索引，最多支持5个设备,取值范围(0~4)
+  ErrorID,{index},ModbusCreate(ip,port,slave_id,isRTU);      //ErrorID:0表示创建Modbus主站成功，-1表示创建Modbus主站失败，其他值参考错误码描述；index: 返回的主站索引，最多支持5个设备,取值范围(0~4)；
 
 - 示例：建立RTU通信主站(60000末端透传端口)
 
   ModbusCreate(127.0.0.1,60000,1,true)
 
-## 3.43 ModbusClose(预计控制器352版本支持)
+- 说明：**控制器3.5.2版本以及以上版本支持；**
+
+## 3.42 ModbusClose
 
 - 功能：和Modbus从站断开连接,释放主站。 
 
@@ -1039,11 +1209,19 @@
   | index | string | 返回的主站索引； |
 
 
+- 返回：
+
+  ErrorID,{},ModbusClose(index);     
+
 - 示例：
 
   ModbusClose(0)
 
-## 3.44 GetInBits(预计控制器352版本支持)
+- 说明：**控制器3.5.2版本以及以上版本支持；**
+
+  ​
+
+## 3.43 GetInBits
 
 - 功能：读离散输入功能。 
 
@@ -1063,17 +1241,20 @@
 
 
 - 返回：
-  - 0/-1  0表示正常 -1表示没有获取成功
-  - table，按位{}
+
+  ErrorID,{value1,value2,...,valuen},GetInBits(index,addr,count);    //table，按位获取结果{value1,value2...,valuen}
+
 - 示例：
 
- 下发：  GetInBits(0,3000,5)
+   下发：  GetInBits(0,3000,5)
 
-正常返回：0,{1,0,1,1,0}
+  正常返回：0,{1,0,1,1,0},GetInBits(0,3000,5);
 
-错误返回：-1,{}
+  错误返回：-1,{},GetInBits(0,3000,5);
 
-## 3.45 GetInRegs(预计控制器352版本支持)
+- 说明：**控制器3.5.2版本以及以上版本支持；**
+
+## 3.44 GetInRegs
 
 - 功能：读输入寄存器。 
 
@@ -1090,21 +1271,24 @@
   | index   | int    | 返回的主站索引；                                 |
   | addr    | int    | 视从站配置而定；                                 |
   | count   | int    | 个数，取值范围：1 -4                             |
-  | valType | string | 可选参数，<br />"U16": 读取16位无符号数（2个字节，占用1个寄存器）<br />"U32": 读取32位无符号数（4个字节，占用2个寄存器）<br />"F32": 读取32位浮点数（4个字节，占用2个寄存器）<br />"F64": 读取64位浮点数（8个字节，占用4个寄存器） |
+  | valType | string | 可选参数，<br />U16: 读取16位无符号数（2个字节，占用1个寄存器）<br />U32: 读取32位无符号数（4个字节，占用2个寄存器）<br />F32: 读取32位浮点数（4个字节，占用2个寄存器）<br />F64: 读取64位浮点数（8个字节，占用4个寄存器） |
 
 
 - 返回：
-  - 0/-1  0表示正常 -1表示没有获取成功
-  - table，按变量类型{}
+
+  ErrorID,{value1,value2,...,valuen},GetInRegs(index,addr,count,valType);    //ErrorID为0表示正常，为-1表示没有获取成功;table，按变量类型返回{value1,value2...,valuen}
+
 - 示例：
 
-GetInRegs(0,4000,3)
+  GetInRegs(0,4000,3)
 
-正常返回：0,{5,18,12}
+  正常返回：0,{5,18,12},GetInRegs(0,4000,3);
 
-错误返回：-1,{}
+  错误返回：-1,{},GetInRegs(0,4000,3);
 
-## 3.46 GetCoils(预计控制器352版本支持)
+- 说明：**控制器3.5.2版本以及以上版本支持；**
+
+## 3.45 GetCoils
 
 - 功能：读线圈功能。 
 
@@ -1125,24 +1309,25 @@ GetInRegs(0,4000,3)
 
 - 返回：
 
-  - 0/-1  0表示正常 -1表示没有获取成功
-  - table，按变量类型
+  ErrorID,{value1,value2,...,valuen},GetCoils(index,addr,count);    //ErrorID为0表示正常，为-1表示没有获取成功;table，按变量类型返回{value1,value2...,valuen}
 
 - 示例：
 
   GetCoils(0,1000,3)
 
-  正常返回：0,{1,1,0}
+  正常返回：0,{1,1,0},GetCoils(0,1000,3);
 
-  错误返回：-1,{}
+  错误返回：-1,{},GetCoils(0,1000,3);
 
-## 3.47 SetCoils(预计控制器352版本支持)
+- 说明：**控制器3.5.2版本以及以上版本支持；**
+
+## 3.46 SetCoils
 
 - 功能：写线圈功能。 
 
 - 格式：SetCoils(index,addr,count,valTab)
 
-- 参数数量：3
+- 参数数量：4
 
 - 支持端口：29999
 
@@ -1158,17 +1343,19 @@ GetInRegs(0,4000,3)
 
 - 返回：
 
-  - count/-1  count表示设置正常 -1表示没有设置成功
+  ErrorID,{},SetCoils(index,addr,count,valTab);    //ErrorID为0表示正常，为-1表示没有设置成功;
 
 - 示例：
 
   SetCoils(0,1000,3,{1,0,1})
 
-  正常返回：3
+  正常返回：0,{},SetCoils(0,1000,3,{1,0,1});
 
-  错误返回：-1
+  错误返回：-1,{},SetCoils(0,1000,3,{1,0,1});
 
-## 3.48 GetHoldRegs(预计控制器352版本支持)
+- 说明：**控制器3.5.2版本以及以上版本支持；**
+
+## 3.47 GetHoldRegs
 
 - 功能：读保持寄存器。 
 
@@ -1185,23 +1372,24 @@ GetInRegs(0,4000,3)
   | index   | int    | index,返回的主站索引，最多支持5个设备,取值范围(0~4)；        |
   | addr    | int    | 保持寄存器的起始地址。视从站配置而定；                      |
   | count   | int    | 读取指定数量type类型的数据。取值范围：1 -4                |
-  | valType | string | 数据类型：<br /> 如果为空，默认读取16位无符号整数（2个字节，占用1个寄存器）<br /> “U16”：读取16位无符号整数（2个字节，占用1个寄存器）<br /> “U32”：读取32位无符号整数（4个字节，占用2个寄存器）<br /> “F32”：读取32位单精度浮点数（4个字节，占用2个寄存器）<br /> “F64”：读取64位双精度浮点数（8个字节，占用4个寄存器） |
+  | valType | string | 数据类型：<br /> 如果为空，默认读取16位无符号整数（2个字节，占用1个寄存器）<br /> U16：读取16位无符号整数（2个字节，占用1个寄存器）<br /> U32：读取32位无符号整数（4个字节，占用2个寄存器）<br /> F32：读取32位单精度浮点数（4个字节，占用2个寄存器）<br /> F64：读取64位双精度浮点数（8个字节，占用4个寄存器） |
 
 
 - 返回：
 
-  - 0/-1  0表示正常 -1表示没有获取成功
-  - table，按变量类型
+  ErrorID,{value1,value2,...,valuen},GetHoldRegs(index,*addr*, *count*,valType);    //ErrorID为0表示正常，为-1表示没有获取成功;table，按变量类型返回{value1,value2...,valuen}
 
 - 示例：从地址3095开始读取一个16位无符号整数
 
    GetHoldRegs(0,3095,1)
 
-  正常返回：0,{13}
+     正常返回：0,{13},GetHoldRegs(0,3095,1);
 
-  错误返回：-1,{}
+     错误返回：-1,{},GetHoldRegs(0,3095,1);
 
-## 3.49 SetHoldRegs(预计控制器352版本支持)
+- 说明：**控制器3.5.2版本以及以上版本支持；**
+
+## 3.48 SetHoldRegs
 
 - 功能：写保存寄存器。 
 
@@ -1219,142 +1407,363 @@ GetInRegs(0,4000,3)
   | addr    | int    | 保持寄存器的起始地址。视从站配置而定；                      |
   | count   | int    | 写入指定数量type类型的数据。取值范围：1 ~4                |
   | valTab  | string | 保持寄存器地址的值                                |
-  | valType | string | 数据类型     <br /> 如果为空，默认读取16位无符号整数（2个字节，占用1个寄存器） <br /> “U16”：读取16位无符号整数（2个字节，占用1个寄存器）  <br />“U32”：读取32位无符号整数（4个字节，占用2个寄存器）   <br />“F32”：读取32位单精度浮点数（4个字节，占用2个寄存器）    <br /> “F64”：读取64位双精度浮点数（8个字节，占用4个寄存器） |
+  | valType | string | 数据类型     <br /> 如果为空，默认读取16位无符号整数（2个字节，占用1个寄存器） <br /> U16：读取16位无符号整数（2个字节，占用1个寄存器）  <br />U32：读取32位无符号整数（4个字节，占用2个寄存器）   <br />F32：读取32位单精度浮点数（4个字节，占用2个寄存器）    <br /> F64：读取64位双精度浮点数（8个字节，占用4个寄存器） |
 
 
 - 返回：
 
-  - count/-1  count表示设置正常 -1表示没有设置成功
+  ErrorID,{},SetHoldRegs(index,*addr*, *count*,*valTab*,valType);    //ErrorID为0表示正常，为-1表示没有设置成功;
 
 - 示例：从地址3095开始，写入两个16位无符号整数值6000，300
 
-  SetHoldRegs(0,3095,2,{6000,300}, “U16”)
+  SetHoldRegs(0,3095,2,{6000,300}, U16)
 
-  正常返回：2
+  正常返回：0,{},SetHoldRegs(0,3095,2,{6000,300}, U16);
 
-  错误返回：-1
+  错误返回：-1,{},SetHoldRegs(0,3095,2,{6000,300}, U16);
 
-## 3.50 GetErrorID
+- 说明：**控制器3.5.2版本以及以上版本支持；**
 
-- 功能：清错机器人
+## 3.49 GetErrorID
+
+- 功能：获取机器人错误码
 - 格式：GetErrorID()
 - 参数数量：0
 - 支持端口：29999
 
 
-- 返回：错误码，其中碰撞检测值为-1，电子皮肤碰撞检测值-2；
+- 返回：
 
-  [[id, id, id], [id], [id], [id], [id], [id], [id]]
+  ErrorID,{[[id,...,id], [id], [id], [id], [id], [id], [id]]},GetErrorID();    //ErrorID为其中碰撞检测值为-2,电子皮肤碰撞检测值-3；{[[id, ..., id], [id], [id], [id], [id], [id], [id]]}返回错误码；[id, ..., id]为控制器以及算法报警信息；后面六个[id]分别表示六个伺服的报警信息；
 
 - 示例：
 
   GetErrorID()
 
+- 说明：**控制器3.5.2版本以及以上版本支持；**
+
+
+## 3.50 DI
+
+- 功能：获取数字量输入端口状态
+
+- 格式：DI(index)
+
+- 参数数量：1
+
+- 支持端口：29999
+
+- 参数详解：1
+
+  | 参数名   | 类型   | 含义               |
+  | ----- | ---- | ---------------- |
+  | index | int  | 数字输入索引，取值范围：1~32 |
+
+
+- 返回：
+
+  ErrorID,{value},DI(index);    //value:返回当前index的值状态，取值范围0/1;
+
+- 示例：
+
+  DI(1)
+
+  返回，数字输入端口1为低电平：
+
+  0,{0},DI(1);
+
+## 3.51 ToolDI
+
+- 功能：获取末端数字量输入端口状态
+
+- 格式：ToolDI(index)
+
+- 参数数量：1
+
+- 支持端口：29999
+
+- 参数详解：1
+
+  | 参数名   | 类型   | 含义                 |
+  | ----- | ---- | ------------------ |
+  | index | int  | 末端数字量输入索引，取值范围：1/2 |
+
+
+- 返回：
+
+  ErrorID,{value},ToolDI(index);    //value:返回当前index的值状态，取值范围0/1;
+
+- 示例：
+
+  ToolDI(2)
+
+  返回，末端数字输入端口2为高电平：
+
+  0,{1},ToolDI(2);
+
+## 3.52 AI
+
+- 功能：获取模拟量输入端口电压值（立即指令）
+
+- 格式：AI(index)
+
+- 参数数量：1
+
+- 支持端口：29999
+
+- 参数详解：1
+
+  | 参数名   | 类型   | 含义                 |
+  | ----- | ---- | ------------------ |
+  | index | int  | 控制柜模拟输入索引，取值范围：1/2 |
+
+
+- 返回：
+
+  ErrorID,{value},AI(index);    //value:返回当前index的电压值;
+
+- 示例：
+
+  AI(2)
+
+  返回，模拟输入端口2的电压值为3.5V：
+
+  0,{3.5},AI(2);
+
+## 3.53 ToolAI
+
+- 功能：获取末端模拟量输入端口电压值（立即指令）
+
+- 格式：ToolAI(index)
+
+- 参数数量：1
+
+- 支持端口：29999
+
+- 参数详解：1
+
+  | 参数名   | 类型   | 含义                |
+  | ----- | ---- | ----------------- |
+  | index | int  | 末端模拟输入索引，取值范围：1/2 |
+
+
+- 返回：
+
+  ErrorID,{value},ToolAI(index);    //value:返回当前index的电压值;
+
+- 示例：
+
+  ToolAI(1)
+
+  返回，模拟输入端口1的电压值为1.5V：
+
+  0,{1.5},ToolAI(1);
+
+## 3.54 DIGroup
+
+- 功能：获取输入组端口状态
+
+- 格式：DIGroup(index1,index2,...,indexn)
+
+- 参数数量：不固定
+
+- 支持端口：29999
+
+- 参数详解：不固定
+
+  | 参数名    | 类型   | 含义               |
+  | ------ | ---- | ---------------- |
+  | index1 | int  | 数字输入索引，取值范围：1-32 |
+  | ...    | ...  | ...              |
+  | indexn | int  | 数字输入索引，取值范围：1-32 |
+
+
+- 返回：
+
+  ErrorID,{value1,value2,...,valuen},DIGroup(index1,index2,...,indexn);    //value1...valuen:返回当前index1到indexn的电压值;
+
+- 示例：
+
+  DIGroup(4,6,2,7)
+
+  返回，获取的输入4、6、2、7端口的电平分别为1，0，1，1：
+
+  0,{1,0,1,1},DIGroup(4,6,2,7);
+
+## 3.55 DOGroup
+
+- 功能：设置输出组端口状态
+
+- 格式：DOGroup(index1,value1,index2,value2,...,indexn,valuen)
+
+- 参数数量：不固定
+
+- 支持端口：29999
+
+- 参数详解：不固定
+
+  | 参数名    | 类型   | 含义                 |
+  | ------ | ---- | ------------------ |
+  | index1 | int  | 设置数字输出索引，取值范围：1-16 |
+  | value1 | int  | 设置数字输出端口状态，取值0/1   |
+  | ...    | ...  | ...                |
+  | indexn | int  | 设置数字输出索引，取值范围：1-16 |
+  | valuen | int  | 设置数字输出端口状态，取值0/1   |
+
+
+- 返回：
+
+  ErrorID,{},DOGroup(index1,value1,index2,value2,...,indexn,valuen);   
+
+- 示例：
+
+  DOGroup(4,1,6,0,2,1,7,0)
+
+  返回，分别设置输出端口4、6、2、7分别为1、0、1、0：
+
+  0,{},DOGroup(4,1,6,0,2,1,7,0);
+
+
+
+
+
+
+
+
+
+
 
 
 # 4.通信协议----实时反馈端口
 
-​	30003端口即实时反馈端口(30004端口将在控制器3.5.2+版本支持)除了用于发送约定的运动相关协议外，还有其他功能，客户端每20ms能收到一次机器人如下表所示的信息。通过实时反馈端口每次收到的数据包有1440个字节，这些字节以标准的格式排列。下表是字节排列的顺序表。
+​	30004端口即实时反馈端口(30004、30005以及30006端口将在控制器3.5.2+版本支持)，客户端**每8ms**能收到一次机器人如下表所示的信息。30005服务器端口**每200ms反馈机器人的信息**，30006端口为**可配置**的反馈机器人信息端口(默认为每**50ms**反馈)；通过实时反馈端口每次收到的数据包有1440个字节，这些字节以标准的格式排列。下表是字节排列的顺序表。(30006端口的实时数据的配置更新可以在线修改后，实时生效；）
 
-|        意义/Meaning         |   数据类型/Type    | 值的数目/Number of values | 字节大小/Size in bytes | 字节位置值/Byte position value |                 描述/Notes                 |
-| :-----------------------: | :------------: | :-------------------: | :----------------: | :-----------------------: | :--------------------------------------: |
-|       Message Size        | unsigned short |           1           |         2          |        0000 ~ 0001        |  消息字节总长度/Total message length in bytes   |
-|                           | unsigned short |           3           |         6          |        0002 ~ 0007        |                   保留位                    |
-|    Digital input bits     |     double     |           1           |         8          |        0008 ~ 0015        | 数字输入/Current state of the digital inputs. |
-|      Digital outputs      |     double     |           1           |         8          |        0016 ~ 0023        |                   数字输出                   |
-|        Robot Mode         |     double     |           1           |         8          |        0024 ~ 0031        |             机器人模式/Robot mode             |
-|     Controller Timer      |     double     |           1           |         8          |        0032 ~ 0039        | 程序扫描时间/Controller realtime thread execution time |
-|           Time            |     double     |           1           |         8          |        0040 ~ 0047        | 控制器通电时间/Time elapsed since the controller was started |
-|        test_value         |     double     |           1           |         8          |        0048 ~ 0055        |     内存结构测试标准值  0x0123 4567 89AB CDEF     |
-|        Safety Mode        |     double     |           1           |         8          |        0056 ~ 0063        |             安全模式/Safety mode             |
-|       Speed scaling       |     double     |           1           |         8          |        0064 ~ 0071        | 速度比例/Speed scaling of the trajectory limiter |
-|   Linear momentum norm    |     double     |           1           |         8          |        0072 ~ 0079        | 机器人当前动量/Norm of Cartesian linear momentum |
-|          V main           |     double     |           1           |         8          |        0080 ~ 0087        |     控制板电压/Masterboard: Main voltage      |
-|          V robot          |     double     |           1           |         8          |        0088 ~ 0095        |  机器人电压/Masterboard: Robot voltage (48V)  |
-|          I robot          |     double     |           1           |         8          |        0096 ~ 0103        |     机器人电流/Masterboard: Robot current     |
-|       Program state       |     double     |           1           |         8          |        0104 ~ 0111        |            程序状态/Program state            |
-|       Safety Status       |     double     |           1           |         8          |        0112 ~ 0119        |            安全状态/Safety status            |
-| Tool Accelerometer values |     double     |           3           |         24         |        0120 ~ 0143        | TCP加速度/Tool x,y and z accelerometer values |
-|      Elbow position       |     double     |           3           |         24         |        0144 ~ 0167        |            肘位置/Elbow position            |
-|      Elbow velocity       |     double     |           3           |         24         |        0168 ~ 0191        |            肘速度/Elbow velocity            |
-|         q target          |     double     |           6           |         48         |        0192 ~ 0239        |      目标关节位置/Target joint positions       |
-|         qd target         |     double     |           6           |         48         |        0240 ~ 0287        |      目标关节速度/Target joint velocities      |
-|        qdd target         |     double     |           6           |         48         |        0288 ~ 0335        |    目标关节加速度/Target joint accelerations    |
-|         I target          |     double     |           6           |         48         |        0336 ~ 0383        |       目标关节电流/Target joint currents       |
-|         M target          |     double     |           6           |         48         |        0384 ~ 0431        |  目标关节扭矩/Target joint moments (torques)   |
-|         q actual          |     double     |           6           |         48         |        0432 ~ 0479        |      实际关节位置/Actual joint positions       |
-|         qd actual         |     double     |           6           |         48         |        0480 ~ 0527        |      实际关节速度/Actual joint velocities      |
-|         I actual          |     double     |           6           |         48         |        0528 ~ 0575        |       实际关节电流/Actual joint currents       |
-|         I control         |     double     |           6           |         48         |        0576 ~ 0623        |   关节控制电流/Joint control currents(暂时0代替)   |
-|    Tool vector actual     |     double     |           6           |         48         |        0624 ~ 0671        | TCP笛卡尔实际坐标值/Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation |
-|     TCP speed actual      |     double     |           6           |         48         |        0672 ~ 0719        | TCP笛卡尔实际速度值/Actual speed of the tool given in Cartesian coordinates |
-|         TCP force         |     double     |           6           |         48         |        0720 ~ 0767        |   TCP力值/Generalised forces in the TCP    |
-|    Tool vector target     |     double     |           6           |         48         |        0768 ~ 0815        | TCP笛卡尔目标坐标值/Target Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation |
-|     TCP speed target      |     double     |           6           |         48         |        0816 ~ 0863        | TCP笛卡尔目标速度值/Target speed of the tool given in Cartesian coordinates |
-|    Motor temperatures     |     double     |           6           |         48         |        0864 ~ 0911        | 关节温度/Temperature of each joint in degrees celsius |
-|        Joint Modes        |     double     |           6           |         48         |        0912 ~ 0959        |        关节控制模式/Joint control modes        |
-|         V actual          |     double     |           6           |         48         |        960  ~ 1007        |        关节电压/Actual joint voltages        |
-|         Handtype          |      char      |           4           |         4          |        1008 ~ 1011        |                    手系                    |
-|           User            |      char      |           1           |         1          |           1012            |                   用户坐标                   |
-|           Tool            |      char      |           1           |         1          |           1013            |                   工具坐标                   |
-|       RunQueuedCmd        |      char      |           1           |         1          |           1014            |                                          |
-|       PauseCmdFlag        |      char      |           1           |         1          |           1015            |                                          |
-|       velocityRatio       |      char      |           1           |         1          |           1016            |              关节速度比例(0~100)               |
-|     accelerationRatio     |      char      |           1           |         1          |           1017            |              关节加速度比例(0~100)              |
-|         jerkRatio         |      char      |           1           |         1          |           1018            |             关节加加速度比例(0~100)              |
-|     xyzVelocityRatio      |      char      |           1           |         1          |           1019            |             笛卡尔位置速度比例(0~100)             |
-|      rVelocityRatio       |      char      |           1           |         1          |           1020            |             笛卡尔姿态速度比例(0~100)             |
-|   xyzAccelerationRatio    |      char      |           1           |         1          |           1021            |            笛卡尔位置加速度比例(0~100)             |
-|    rAccelerationRatio     |      char      |           1           |         1          |           1022            |            笛卡尔姿态加速度比例(0~100)             |
-|       xyzJerkRatio        |      char      |           1           |         1          |           1023            |            笛卡尔位置加加速度比例(0~100)            |
-|        rJerkRatio         |      char      |           1           |         1          |           1024            |            笛卡尔姿态加加速度比例(0~100)            |
-|       Reserve2[95]        |      char      |           1           |         95         |         1025-1119         |                   保留位                    |
-|        m_actual[6]        |     double     |           6           |         48         |        1120 ~ 1167        |                   实际扭矩                   |
-|           load            |     double     |           1           |         8          |         1168-1175         |                  负载重量kg                  |
-|          centerX          |     double     |           1           |         8          |         1176-1183         |                X方向偏心距离mm                 |
-|          centerY          |     double     |           1           |         8          |         1184-1191         |                Y方向偏心距离mm                 |
-|          centerZ          |     double     |           1           |         8          |         1192-1199         |                Z方向偏心距离mm                 |
-|          user[6]          |     double     |           6           |         48         |         1200-1247         |                  用户坐标值                   |
-|          tool[6]          |     double     |           6           |         48         |         1248-1295         |                  工具坐标值                   |
-|       Reserve3[144]       |      char      |           1           |        144         |        1296 ~ 1440        |                   保留位                    |
-|           TOTAL           |                |          183          |        1440        |                           |     183values in a 1440byte package      |
+|      意义/Meaning      |   数据类型/Type    | 值的数目/Number of values | 字节大小/Size in bytes | 字节位置值/Byte position value |                 描述/Notes                 |
+| :------------------: | :------------: | :-------------------: | :----------------: | :-----------------------: | :--------------------------------------: |
+|     MessageSize      | unsigned short |           1           |         2          |        0000 ~ 0001        |  消息字节总长度/Total message length in bytes   |
+|                      | unsigned short |           3           |         6          |        0002 ~ 0007        |                   保留位                    |
+|    DigitalInputs     |     double     |           1           |         8          |        0008 ~ 0015        | 数字输入/Current state of the digital inputs. |
+|    DigitalOutputs    |     double     |           1           |         8          |        0016 ~ 0023        |                   数字输出                   |
+|      RobotMode       |     double     |           1           |         8          |        0024 ~ 0031        |             机器人模式/Robot mode             |
+|                      |     double     |           1           |         8          |        0032 ~ 0039        |                   保留位                    |
+|                      |     double     |           1           |         8          |        0040 ~ 0047        |                   保留位                    |
+|      TestValue       |     double     |           1           |         8          |        0048 ~ 0055        |     内存结构测试标准值  0x0123 4567 89AB CDEF     |
+|                      |     double     |           1           |         8          |        0056 ~ 0063        |                   保留位                    |
+|     SpeedScaling     |     double     |           1           |         8          |        0064 ~ 0071        | 速度比例/Speed scaling of the trajectory limiter |
+|  LinearMomentumNorm  |     double     |           1           |         8          |        0072 ~ 0079        | 机器人当前动量/Norm of Cartesian linear momentum(需要特定硬件版本) |
+|        VMain         |     double     |           1           |         8          |        0080 ~ 0087        |     控制板电压/Masterboard: Main voltage      |
+|        VRobot        |     double     |           1           |         8          |        0088 ~ 0095        |  机器人电压/Masterboard: Robot voltage (48V)  |
+|        IRobot        |     double     |           1           |         8          |        0096 ~ 0103        |     机器人电流/Masterboard: Robot current     |
+|                      |     double     |           1           |         8          |        0104 ~ 0111        |                   保留位                    |
+|                      |     double     |           1           |         8          |        0112 ~ 0119        |                   保留位                    |
+|  ToolAccelerometer   |     double     |           3           |         24         |        0120 ~ 0143        | TCP加速度/Tool x,y and z accelerometer values(需要特定硬件版本) |
+|    ElbowPosition     |     double     |           3           |         24         |        0144 ~ 0167        |       肘位置/Elbow position(需要特定硬件版本)       |
+|    ElbowVelocity     |     double     |           3           |         24         |        0168 ~ 0191        |       肘速度/Elbow velocity(需要特定硬件版本)       |
+|       QTarget        |     double     |           6           |         48         |        0192 ~ 0239        |      目标关节位置/Target joint positions       |
+|       QDTarget       |     double     |           6           |         48         |        0240 ~ 0287        |      目标关节速度/Target joint velocities      |
+|      QDDTarget       |     double     |           6           |         48         |        0288 ~ 0335        |    目标关节加速度/Target joint accelerations    |
+|       ITarget        |     double     |           6           |         48         |        0336 ~ 0383        |       目标关节电流/Target joint currents       |
+|       MTarget        |     double     |           6           |         48         |        0384 ~ 0431        |  目标关节扭矩/Target joint moments (torques)   |
+|       QActual        |     double     |           6           |         48         |        0432 ~ 0479        |      实际关节位置/Actual joint positions       |
+|       QDActual       |     double     |           6           |         48         |        0480 ~ 0527        |      实际关节速度/Actual joint velocities      |
+|       IActual        |     double     |           6           |         48         |        0528 ~ 0575        |       实际关节电流/Actual joint currents       |
+|                      |     double     |           6           |         48         |        0576 ~ 0623        |                   保留位                    |
+|   ToolVectorActual   |     double     |           6           |         48         |        0624 ~ 0671        | TCP笛卡尔实际坐标值/Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation |
+|    TCPSpeedActual    |     double     |           6           |         48         |        0672 ~ 0719        | TCP笛卡尔实际速度值/Actual speed of the tool given in Cartesian coordinates |
+|       TCPForce       |     double     |           6           |         48         |        0720 ~ 0767        |   TCP力值/Generalised forces in the TCP    |
+|   ToolVectorTarget   |     double     |           6           |         48         |        0768 ~ 0815        | TCP笛卡尔目标坐标值/Target Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation |
+|    TCPSpeedTarget    |     double     |           6           |         48         |        0816 ~ 0863        | TCP笛卡尔目标速度值/Target speed of the tool given in Cartesian coordinates |
+|  MotorTemperatures   |     double     |           6           |         48         |        0864 ~ 0911        | 关节温度/Temperature of each joint in degrees celsius |
+|      JointModes      |     double     |           6           |         48         |        0912 ~ 0959        |        关节控制模式/Joint control modes        |
+|       VActual        |     double     |           6           |         48         |        960  ~ 1007        |        关节电压/Actual joint voltages        |
+|       HandType       |      char      |           4           |         4          |        1008 ~ 1011        |                    手系                    |
+|         User         |      char      |           1           |         1          |           1012            |                   用户坐标                   |
+|         Tool         |      char      |           1           |         1          |           1013            |                   工具坐标                   |
+|     RunQueuedCmd     |      char      |           1           |         1          |           1014            |                 算法队列运行标志                 |
+|     PauseCmdFlag     |      char      |           1           |         1          |           1015            |                 算法队列暂停标志                 |
+|    VelocityRatio     |      char      |           1           |         1          |           1016            |              关节速度比例(0~100)               |
+|  AccelerationRatio   |      char      |           1           |         1          |           1017            |              关节加速度比例(0~100)              |
+|      JerkRatio       |      char      |           1           |         1          |           1018            |             关节加加速度比例(0~100)              |
+|   XYZVelocityRatio   |      char      |           1           |         1          |           1019            |             笛卡尔位置速度比例(0~100)             |
+|    RVelocityRatio    |      char      |           1           |         1          |           1020            |             笛卡尔姿态速度比例(0~100)             |
+| XYZAccelerationRatio |      char      |           1           |         1          |           1021            |            笛卡尔位置加速度比例(0~100)             |
+|  RAccelerationRatio  |      char      |           1           |         1          |           1022            |            笛卡尔姿态加速度比例(0~100)             |
+|     XYZJerkRatio     |      char      |           1           |         1          |           1023            |            笛卡尔位置加加速度比例(0~100)            |
+|      RJerkRatio      |      char      |           1           |         1          |           1024            |            笛卡尔姿态加加速度比例(0~100)            |
+|     BrakeStatus      |      char      |           1           |         1          |           1025            |                 机器人抱闸状态                  |
+|     EnableStatus     |      char      |           1           |         1          |           1026            |                 机器人使能状态                  |
+|      DragStatus      |      char      |           1           |         1          |           1027            |                 机器人拖拽状态                  |
+|    RunningStatus     |      char      |           1           |         1          |           1028            |                 机器人运行状态                  |
+|     ErrorStatus      |      char      |           1           |         1          |           1029            |                 机器人报警状态                  |
+|      JogStatus       |      char      |           1           |         1          |           1030            |                 机器人点动状态                  |
+|      RobotType       |      char      |           1           |         1          |           1031            |                   机器类型                   |
+|   DragButtonSignal   |      char      |           1           |         1          |           1032            |                 按钮板拖拽信号                  |
+|  EnableButtonSignal  |      char      |           1           |         1          |           1033            |                 按钮板使能信号                  |
+|  RecordButtonSignal  |      char      |           1           |         1          |           1034            |                 按钮板录制信号                  |
+| ReappearButtonSignal |      char      |           1           |         1          |           1035            |                 按钮板复现信号                  |
+|   JawButtonSignal    |      char      |           1           |         1          |           1036            |                按钮板夹爪控制信号                 |
+|    SixForceOnline    |      char      |           1           |         1          |           1037            |                 六维力在线状态                  |
+|     Reserve2[82]     |      char      |           1           |         82         |         1038-1119         |                   保留位                    |
+|      MActual[6]      |     double     |           6           |         48         |        1120 ~ 1167        |                   实际扭矩                   |
+|         Load         |     double     |           1           |         8          |         1168-1175         |                  负载重量kg                  |
+|       CenterX        |     double     |           1           |         8          |         1176-1183         |                X方向偏心距离mm                 |
+|       CenterY        |     double     |           1           |         8          |         1184-1191         |                Y方向偏心距离mm                 |
+|       CenterZ        |     double     |           1           |         8          |         1192-1199         |                Z方向偏心距离mm                 |
+|       User[6]        |     double     |           6           |         48         |         1200-1247         |                  用户坐标值                   |
+|       Tool[6]        |     double     |           6           |         48         |         1248-1295         |                  工具坐标值                   |
+|      traceIndex      |     double     |           1           |         8          |         1296-1303         |                 轨迹复现运行索引                 |
+|   SixForceValue[6]   |     double     |           6           |         48         |         1304-1351         |                当前六维力数据原始值                |
+|     Reserve3[88]     |      char      |           1           |         88         |        1352 ~ 1440        |                   保留位                    |
+|        TOTAL         |                |                       |        1440        |                           |             1440byte package             |
 
-其中Robot Mode返回机器人模式：                                                          
+其中Robot Mode返回机器人模式：                        
 
-| 模式   | 描述                           | 备注     |
-| ---- | ---------------------------- | ------ |
-| -1   | ROBOT_MODE_NO_CONTROLLER     | 没有控制器  |
-| 0    | ROBOT_MODE_DISCONNECTED      | 没有连接   |
-| 1    | ROBOT_MODE_CONFIRM_SAFETY    | 配置安全参数 |
-| 2    | ROBOT_MODE_BOOTING           | 启动     |
-| 3    | ROBOT_MODE_POWER_OFF         | 下电     |
-| 4    | ROBOT_MODE_POWER_ON          | 上电     |
-| 5    | ROBOT_MODE_IDLE              | 空闲     |
-| 6    | ROBOT_MODE_BACKDRIVE         | 拖拽     |
-| 7    | ROBOT_MODE_RUNNING           | 运行     |
-| 8    | ROBOT_MODE_UPDATING_FIRMWARE | 更新固件   |
-| 9    | ROBOT_MODE_ERROR             | 报警     |
+| 模式   | 描述                    | 备注         |
+| ---- | --------------------- | ---------- |
+| 1    | ROBOT_MODE_INIT       | 初始化        |
+| 2    | ROBOT_MODE_BRAKE_OPEN | 抱闸松开       |
+| 3    |                       | 保留位        |
+| 4    | ROBOT_MODE_DISABLED   | 未使能(抱闸未松开) |
+| 5    | ROBOT_MODE_ENABLE     | 使能(空闲)     |
+| 6    | ROBOT_MODE_BACKDRIVE  | 拖拽         |
+| 7    | ROBOT_MODE_RUNNING    | 运行状态       |
+| 8    | ROBOT_MODE_RECORDING  | 拖拽录制       |
+| 9    | ROBOT_MODE_ERROR      | 报警         |
+| 10   | ROBOT_MODE_PAUSE      | 暂停状态       |
+| 11   | ROBOT_MODE_JOG        | 点动         |
 
 - 说明：
-  - [ ] 本体下电，状态为3；
-  - [ ] 本体有电，但没有使能，状态为4；
+  - [ ] 开启抱闸，状态为2；
+  - [ ] 本体下使能，状态为4；
   - [ ] 使能成功后，则状态为5 ；
+  - [ ] 机器人运行，状态为7；
+  - [ ] 机器人暂停，状态为10；
   - [ ] 机器人进入拖拽模式(使能状态)，状态为6；
-  - [ ] 机器人发生运动，状态为7；
-  - [ ] 优先级：上电<空闲<拖拽=运行<下电<报警
+  - [ ] 机器人在拖拽录制，状态为8；
+  - [ ] 机器人在点动，状态为11；
   - [ ] 其中报警优先级最高，其他状态同时存在时，若有报警，先将状态置9；
 
+- 其中RobotType表示机器类型：
+
+  | RobotType值 | 代表机型  |
+  | ---------- | ----- |
+  | 3          | CR3   |
+  | 31         | CR3L  |
+  | 5          | CR5   |
+  | 7          | CR7   |
+  | 10         | CR10  |
+  | 12         | CR12  |
+  | 16         | CR16  |
+  | 1          | MG400 |
+  | 2          | M1Pro |
+
+  ​
 
 
-其中Program state返回状态如下：
 
-- 停止状态	返回0
-- 暂停状态返回1
-- 运行状态返回2
+# 5.通信协议----运动相关端口
 
-
-
-如下表所示为30003实时反馈端口支持的运动命令协议；
+​	上位机可以通过30003端口直接发送一些机器人运动相关指令给机器人，这些指令CR自己定义的；如下表是30003端口的指令列表。可以通过如下指令实现对机器人的运动相关控制；
 
 | 指令           | 描述                          |
 | ------------ | --------------------------- |
@@ -1375,17 +1784,19 @@ GetInRegs(0,4000,3)
 | StartPath    | 轨迹复现                        |
 | StartFCTrace | 带力控的轨迹拟合                    |
 
-## 4.1 MovJ
+
+
+## 5.1 MovJ
 
 - 功能：点到点运动，目标点位为笛卡尔点位。
 
-- 格式：MovJ(X,Y,Z,Rx,Ry,Rz)
+- 格式：MovJ(X,Y,Z,Rx,Ry,Rz,SpeedJ=R,AccJ=R)   //其中SpeedJ=R,AccJ=R为可选设置参数，分别表示设置关节速度比例以及加速度比例值； 和29999端口设置的SpeedJ、AccJ意义一致；
 
-- 参数数量：6
+- 必填参数数量：6
 
 - 支持端口：30003
 
-- 参数详解：6
+- 必填参数详解：6
 
   | 参数名  | 类型     | 含义          |
   | ---- | ------ | ----------- |
@@ -1396,23 +1807,31 @@ GetInRegs(0,4000,3)
   | Ry   | double | Ry 轴位置，单位：度 |
   | Rz   | double | Rz 轴位置，单位：度 |
 
+- 返回：
+
+  ErrorID,{},MovJ(X,Y,Z,Rx,Ry,Rz);   
+
 - 示例：
 
-  MovJ(-500,100,200,150,0,90)
+  MovJ(-500,100,200,150,0,90,AccJ=50)
+
+  返回：
+
+  ErrorID,{},MovJ(-500,100,200,150,0,90,AccJ=50);   
 
 
 
-## 4.2 MovL
+## 5.2 MovL
 
 - 功能：直线运动，目标点位为笛卡尔点位。
 
-- 格式：MovL(X,Y,Z,Rx,Ry,Rz)
+- 格式：MovL(X,Y,Z,Rx,Ry,Rz,SpeedL=R,AccL=R)  //其中SpeedL=R,AccL=R为可选设置参数，分别表示设置笛卡尔速度比例以及加速度比例值； 和29999端口设置的SpeedL、AccL意义一致；
 
-- 参数数量：6
+- 必填参数数量：6
 
 - 支持端口：30003
 
-- 参数详解：6
+- 必填参数详解：6
 
   | 参数名  | 类型     | 含义          |
   | ---- | ------ | ----------- |
@@ -1423,21 +1842,29 @@ GetInRegs(0,4000,3)
   | Ry   | double | Ry 轴位置，单位：度 |
   | Rz   | double | Rz 轴位置，单位：度 |
 
+- 返回：
+
+  ErrorID,{},MovL(X,Y,Z,Rx,Ry,Rz,SpeedL=R,AccL=R);   
+
 - 示例：
 
-  MovL(-500,100,200,150,0,90)
+  MovL(-500,100,200,150,0,90,SpeedL=60)
 
-## 4.3 JointMovJ
+  返回：
+
+  ErrorID,{},MovL(-500,100,200,150,0,90,SpeedL=60);   
+
+## 5.3 JointMovJ
 
 - 功能：点到点运动，目标点位为关节点位。
 
-- 格式：JointMovJ(J1,J2,J3,J4,J5,J6)
+- 格式：JointMovJ(J1,J2,J3,J4,J5,J6,SpeedJ=R,AccJ=R)  //其中SpeedJ=R,AccJ=R为可选设置参数，分别表示设置关节速度比例以及加速度比例值； 和29999端口设置的SpeedJ、AccJ意义一致；
 
-- 参数数量：6
+- 必填参数数量：6
 
 - 支持端口：30003
 
-- 参数详解：6
+- 必填参数详解：6
 
   | 参数名  | 类型     | 含义          |
   | ---- | ------ | ----------- |
@@ -1448,25 +1875,33 @@ GetInRegs(0,4000,3)
   | J5   | double | J5 轴位置，单位：度 |
   | J6   | double | J6 轴位置，单位：度 |
 
+- 返回：
+
+  ErrorID,{},JointMovJ(J1,J2,J3,J4,J5,J6,SpeedJ=R,AccJ=R);   
+
 - 示例：
 
-  JointMovJ(0,0,-90,0,90,0)
+  JointMovJ(0,0,-90,0,90,0,SpeedJ=60,AccJ=50)
+
+  返回：
+
+  ErrorID,{},JointMovJ(0,0,-90,0,90,0,SpeedJ=60,AccJ=50);   
 
 ## 4.4 Jump
 
-待定
+说明：**本条指令暂时废弃，不建议使用；**
 
 ## 4.5 RelMovJ
 
 - 功能：以点到点方式运动至笛卡尔偏移位置。
 
-- 格式：RelMovJ(offset1,offset2,offset3,offset4,offset5,offset6)
+- 格式：RelMovJ(offset1,offset2,offset3,offset4,offset5,offset6,SpeedJ=R,AccJ=R)  //其中SpeedJ=R,AccJ=R为可选设置参数，分别表示设置关节速度比例以及加速度比例值； 和29999端口设置的SpeedJ、AccJ意义一致；
 
-- 参数数量：6
+- 必填参数数量：6
 
 - 支持端口：30003
 
-- 参数详解：6
+- 必填参数详解：6
 
   | 参数名     | 类型     | 含义              |
   | ------- | ------ | --------------- |
@@ -1477,6 +1912,10 @@ GetInRegs(0,4000,3)
   | offset5 | double | 关节J5轴方向偏移，单位：度  |
   | offset6 | double | 关节J6轴轴方向偏移，单位：度 |
 
+- 返回：
+
+  ErrorID,{},RelMovJ(offset1,offset2,offset3,offset4,offset5,offset6,SpeedJ=R,AccJ=R);
+
 - 示例：
 
   RelMovJ(10,10,10,10,10,10)
@@ -1485,19 +1924,23 @@ GetInRegs(0,4000,3)
 
 - 功能：以直线运动至笛卡尔偏移位置。
 
-- 格式：RelMovL(offsetX,offsetY,offsetZ)
+- 格式：RelMovL(offsetX,offsetY,offsetZ,SpeedL=R,AccL=R)  //其中SpeedL=R,AccL=R为可选设置参数，分别表示设置笛卡尔速度比例以及加速度比例值； 和29999端口设置的SpeedL、AccL意义一致；
 
-- 参数数量：3
+- 必填参数数量：3
 
 - 支持端口：30003
 
-- 参数详解：3
+- 必填参数详解：3
 
   | 参数名     | 类型     | 含义           |
   | ------- | ------ | ------------ |
   | offsetX | double | X轴方向偏移，单位：mm |
   | offsetY | double | Y轴方向偏移，单位：mm |
   | offsetZ | double | Z轴方向偏移，单位：mm |
+
+- 返回：
+
+  ErrorID,{},RelMovL(offsetX,offsetY,offsetZ,SpeedL=R,AccL=R);
 
 - 示例：
 
@@ -1507,7 +1950,7 @@ GetInRegs(0,4000,3)
 
 - 功能：在直线运动时并行设置数字输出端口状态，目标点位为笛卡尔点位。
 
-- 格式：MovLIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status})
+- 格式：MovLIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},SpeedL=R,AccL=R)  //其中SpeedL=R,AccL=R为可选设置参数，分别表示设置笛卡尔速度比例以及加速度比例值； 和29999端口设置的SpeedL、AccL意义一致；
 
 - 参数数量：10
 
@@ -1528,6 +1971,10 @@ GetInRegs(0,4000,3)
   | Index    | int    | 数字输出索引，取值范围：1~24                         |
   | Status   | int    | 数字输出状态，取值范围：0或1                          |
 
+- 返回：
+
+  ErrorID,{},MovLIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},SpeedL=R,AccL=R);
+
 - 示例：
 
   MovLIO(-500,100,200,150,0,90,{0,50,1,0})
@@ -1536,7 +1983,7 @@ GetInRegs(0,4000,3)
 
 - 功能：点到点运动时并行设置数字输出端口状态，目标点位为笛卡尔点位。
 
-- 格式：MovJIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status})
+- 格式：MovJIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},SpeedJ=R,AccJ=R)  //其中SpeedJ=R,AccJ=R为可选设置参数，分别表示设置关节速度比例以及加速度比例值； 和29999端口设置的SpeedJ、AccJ意义一致；
 
 - 参数数量：不固定
 
@@ -1557,6 +2004,10 @@ GetInRegs(0,4000,3)
   | Index    | int    | 数字输出索引，取值范围：1~24                         |
   | Status   | int    | 数字输出状态，取值范围：0或1                          |
 
+- 返回：
+
+  ErrorID,{},MovJIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},SpeedJ=R,AccJ=R);
+
 - 示例：
 
   MovJIO(-500,100,200,150,0,90,{0,50,1,0})
@@ -1567,13 +2018,13 @@ GetInRegs(0,4000,3)
 
   ​		该指令需结合其他运动指令确定圆弧起始点。
 
-- 格式：Arc(X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2)
+- 格式：Arc(X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2,SpeedL=R,AccL=R)  //其中SpeedL=R,AccL=R为可选设置参数，分别表示设置笛卡尔速度比例以及加速度比例值； 和29999端口设置的SpeedL、AccL意义一致；
 
-- 参数数量：12
+- 必填参数数量：12
 
 - 支持端口：30003
 
-- 参数详解：12
+- 必填参数详解：12
 
   | 参数名  | 类型     | 含义                  |
   | ---- | ------ | ------------------- |
@@ -1590,19 +2041,23 @@ GetInRegs(0,4000,3)
   | Ry2  | double | 表示圆弧结束点Ry2轴位置，单位：度  |
   | Rz2  | double | 表示圆弧结束点Rz2 轴位置，单位：度 |
 
+- 返回：
+
+  ErrorID,{},Arc(X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2,SpeedL=R,AccL=R);
+
 - 示例：
 
 ## 4.10 Circle
 
 - 功能：：整圆运动，需结合其他运动指令完成整圆运动。
 
-- 格式：Circle(count,X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2)
+- 格式：Circle(count,X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2,SpeedL=R,AccL=R)  //其中SpeedL=R,AccL=R为可选设置参数，分别表示设置笛卡尔速度比例以及加速度比例值； 和29999端口设置的SpeedL、AccL意义一致；
 
-- 参数数量：13
+- 必填参数数量：13
 
 - 支持端口：30003
 
-- 参数详解：13
+- 必填参数详解：13
 
   | 参数名   | 类型     | 含义           |
   | ----- | ------ | ------------ |
@@ -1620,7 +2075,13 @@ GetInRegs(0,4000,3)
   | Ry2   | double | Ry2轴位置，单位：度  |
   | Rz2   | double | Rz2轴位置，单位：度  |
 
+- 返回：
+
+  ErrorID,{},Circle(count,X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2,SpeedL=R,AccL=R);
+
 - 示例：
+
+- 说明：**本条指令暂时废弃，不建议使用；**
 
 
 
@@ -1628,13 +2089,13 @@ GetInRegs(0,4000,3)
 
 - 功能：基于关节空间的动态跟随命令。
 
-- 格式：ServoJ(J11,J12,J13,J14,J15,J16)
+- 格式：ServoJ(J11,J12,J13,J14,J15,J16)  
 
-- 参数数量：6
+- 必填参数数量：6
 
 - 支持端口：30003
 
-- 参数详解：6
+- 必填参数详解：6
 
   | 参数名  | 类型     | 含义              |
   | ---- | ------ | --------------- |
@@ -1644,6 +2105,10 @@ GetInRegs(0,4000,3)
   | J14  | double | P1点J14 轴位置，单位：度 |
   | J15  | double | P1点J15 轴位置，单位：度 |
   | J16  | double | P1点J16 轴位置，单位：度 |
+
+- 返回：
+
+  ​	无
 
 - 示例：
 
@@ -1670,6 +2135,10 @@ GetInRegs(0,4000,3)
   | Ry1  | double | Ry1 轴位置，单位：度 |
   | Rz1  | double | Rz1轴位置，单位：度  |
 
+- 返回：
+
+  ​	无
+
 - 示例：
 
   ServoP(-500,100,200,150,0,90）
@@ -1679,25 +2148,39 @@ GetInRegs(0,4000,3)
 
 - 功能：点动运动，不固定距离运动
 
-- 格式：MoveJog(axisID)
+- 格式：MoveJog(axisID,CoordType=typeValue,User=index,Tool=index)     //其中CoordType、User以及Tool为可选设置参数，不填按照默认值；CoordType: 1:用户坐标系 2：工具坐标系，默认值为1； User:用户索引0~9,默认值为0；Tool:工具索引0~9,默认值为0；
 
-- 参数数量：1
+- 必填参数数量：1
 
 - 支持端口：30003
 
-- **注意：命令下发后，须另外下发MoveJog()停止命令控制机器人停止运动；另下发非指定string内容的参数都会导致机器人停止；**
+- **注意：命令下发后，须另外下发MoveJog()停止命令控制机器人停止运动；另下发非指定string内容的参数都会导致机器人停止；**完全停止需要大概消耗100ms时间；
 
-- 参数详解：1
+- 必填参数详解：1
 
   | 参数名    | 类型     | 含义                                       |
   | ------ | ------ | ---------------------------------------- |
   | axisID | string | 点动运动轴<br />J1+ 表示关节1正方向运动        J1- 表示关节1负方向运动 <br />J2+ 表示关节2正方向运动        J2- 表示关节2负方向运动<br />J3+ 表示关节3正方向运动        J3- 表示关节3负方向运动<br />J4+ 表示关节4正方向运动        J4- 表示关节4负方向运动<br />J5+ 表示关节5正方向运动        J5- 表示关节5负方向运动<br />J6+ 表示关节6正方向运动        J6- 表示关节6负方向运动<br />X+ 表示X轴正方向运动             X- 表示X轴负方向运动 <br />Y+ 表示Y轴正方向运动             Y- 表示Y轴负方向运动<br />Z+ 表示Z轴正方向运动             Z- 表示Z轴负方向运动<br />Rx+ 表示Rx轴正方向运动        Rx- 表示Rx轴负方向运动<br />Ry+ 表示Ry轴正方向运动        Ry- 表示Ry轴负方向运动<br />Rz+ 表示Rz轴正方向运动        Rz- 表示Rz轴负方向运动<br /> |
 
+- 返回：
+
+  ErrorID,{},MoveJog(axisID,CoordType=typeValue,User=index,Tool=index);  
+
 - 示例：J2负方向运动，再停止点动
 
   MoveJog(j2-)
 
+  返回：
+
+  0,{},MoveJog(j2-);
+
   MoveJog()
+
+  返回：
+
+  0,{},MoveJog();
+
+  说明：**控制器3.5.2版本以及以上版本支持此命令；**其中用户若是再发关节点动运行则会忽略CoordType、User以及Tool这三个可选设置参数；
 
 
 ## 4.14 StartTrace
@@ -1718,13 +2201,31 @@ GetInRegs(0,4000,3)
   | --------- | ------ | ---------------------------------------- |
   | traceName | string | 轨迹文件名（含后缀）<br /> 轨迹路径存放在/dobot/userdata/project/process/trajectory/ |
 
+- 返回：
+
+  ErrorID,{},StartTrace(traceName);  
+
 - 示例：先获取名字recv_string的轨迹的首个关节点{x,y,z,rx,ry,rz}，在点到点运动{x,y,z,rx,ry,rz}后，在下发名字recv_string做轨迹拟合；
 
   GetTraceStartPose(recv_string.json)
 
+  返回：
+
+  0,{x,y,z,rx,ry,rz},GetTraceStartPose(recv_string.json);
+
   MovJ(x,y,z,rx,ry,rz)
 
+  返回：
+
+  0,{},MovJ(x,y,z,rx,ry,rz);
+
   StartTrace(recv_string)
+
+  返回：
+
+  0,{},StartTrace(recv_string);
+
+- 说明：**控制器3.5.2版本以及以上版本支持此命令；**
 
 ## 4.15 StartPath
 
@@ -1746,15 +2247,32 @@ GetInRegs(0,4000,3)
   | const     | int    | const=1时，匀速复现，轨迹中的停顿及死区会被移除;<br />const=0时，按照原速复现； |
   | cart      | int    | cart=1时，按笛卡尔路径复现；<br />cart=0时，按关节路径复现；  |
 
+- 返回：
+
+  ErrorID,{},StartPath(traceName,const,cart);  
+
 - 示例：  先获取名字recv_string的轨迹的首个点{j1,j2,j3,j4,j5,j6}，在点到点运动{j1,j2,j3,j4,j5,j6}后，在下发名字recv_string按照原速复现，按笛卡尔路径匀速复现；
 
   GetPathStartPose(recv_string)
 
+  返回：
+
+  0,{j1,j2,j3,j4,j5,j6},GetPathStartPose(recv_string);
+
   JointMovJ(j1,j2,j3,j4,j5,j6)
+
+  返回：
+
+  0,{},JointMovJ(j1,j2,j3,j4,j5,j6);
 
   StartPath(recv_string,0,1)
 
-  
+  返回：
+
+  0,{},StartPath(recv_string,0,1);
+
+- 说明：**控制器3.5.2版本以及以上版本支持此命令；**
+
 ## 4.16 StartFCTrace
 
 - 功能：带力控的轨迹拟合。(轨迹文件笛卡尔点)
@@ -1773,14 +2291,74 @@ GetInRegs(0,4000,3)
   | --------- | ------ | ---------------------------------------- |
   | traceName | string | 轨迹文件名（含后缀）<br /> 轨迹路径存放在/dobot/userdata/project/process/trajectory/ |
 
+- 返回：
+
+  ErrorID,{},StartFCTrace(traceName);  
+
 - 示例：先获取轨迹文件名字recv_string的轨迹的首个点{x,y,z,rx,ry,rz}，在点到点运动{x,y,z,rx,ry,rz}后，再下发轨迹文件名字recv_string按照原速复现，按笛卡尔路径匀速复现；
 
   GetTraceStartPose(recv_string)
 
+  返回：
+
+  0,{x,y,z,rx,ry,rz},GetTraceStartPose(recv_string);
+
   MovJ(x,y,z,rx,ry,rz)
+
+  返回：
+
+  0,{},MovJ(x,y,z,rx,ry,rz);
 
   StartFCTrace(recv_string)
 
-  ​
+  返回：
 
+  0,{},StartFCTrace(recv_string);
+
+- 说明：**控制器3.5.2版本以及以上版本支持此命令；**
+
+
+
+
+## 4.17 Sync
+
+- 功能：阻塞程序执行队列指令，待所有队列指令执行完才返回。
+
+- 格式：Sync()
+
+- 参数数量：0
+
+- 支持端口：30003
+
+- 返回：
+
+  ErrorID,{},Sync();   
+
+- 示例：
+
+  Sync()
+
+
+
+​
+
+# 6.错误码描述
+
+| 错误码    | 描述           | 备注                                       |
+| ------ | ------------ | ---------------------------------------- |
+| 0      | 无错误          | 下发成功                                     |
+| -1     | 没有获取成功       | 命令接收失败/建立失败                              |
+| -2     | 碰撞检测         |                                          |
+| -3     | 电子皮肤碰撞检测     |                                          |
+|        |              |                                          |
+|        |              |                                          |
+| -10000 | 命令错误         | 不存在下发的命令                                 |
+| -20000 | 参数数量错误       | 下发命令中的参数数量错误                             |
+| -30001 | 第一个参数的参数类型错误 | -30000表示参数类型错误<br /> 最后一位1表示下发第1个参数的参数类型错误 |
+| -30002 | 第二个参数的参数类型错误 | -30000表示参数类型错误<br /> 最后一位2表示下发第2个参数的参数类型错误 |
+| 。。。    | 。。。          | 。。。                                      |
+| -40001 | 第一个参数的参数范围错误 | -40000表示参数范围错误<br /> 最后一位1表示下发第1个参数的参数范围错误 |
+| -40002 | 第二个参数的参数范围错误 | -40000表示参数范围错误<br /> 最后一位1表示下发第1个参数的参数范围错误 |
+| 。。。    | 。。。          | 。。。                                      |
+|        |              |                                          |
 
