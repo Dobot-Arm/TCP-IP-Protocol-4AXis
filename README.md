@@ -27,6 +27,8 @@
 - V2.2-2021/12/22： 修复一些运行指令可选参数参数错误以及统一运动指令AccL和AccJ可选参数；
 - V2.3-2022/01/07：实时反馈新增四元数以及当前时间戳；新增开关抱闸指令；新增若干指令说明；
 - V2.3-2022/01/12：运动指令新增用户和工具坐标系的可选项设置；对逆解接口进行重新设计；
+- V2.3-2022/01/21：新增实时反馈的TCP传感器力值(通过六维力计算)字段；
+- V2.4-2022/01/24：修改RelMovJ指令参数；根据《相对运动指令方案》新增5条相对运动相关指令；
 
 
 
@@ -1730,10 +1732,10 @@
 |       QActual        |     double     |           6           |         48         |        0432 ~ 0479        |      实际关节位置/Actual joint positions       |
 |       QDActual       |     double     |           6           |         48         |        0480 ~ 0527        |      实际关节速度/Actual joint velocities      |
 |       IActual        |     double     |           6           |         48         |        0528 ~ 0575        |       实际关节电流/Actual joint currents       |
-|                      |     double     |           6           |         48         |        0576 ~ 0623        |                   保留位                    |
+|    ActualTCPForce    |     double     |           6           |         48         |        0576 ~ 0623        |            TCP传感器力值(通过六维力计算)             |
 |   ToolVectorActual   |     double     |           6           |         48         |        0624 ~ 0671        | TCP笛卡尔实际坐标值/Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation |
 |    TCPSpeedActual    |     double     |           6           |         48         |        0672 ~ 0719        | TCP笛卡尔实际速度值/Actual speed of the tool given in Cartesian coordinates |
-|       TCPForce       |     double     |           6           |         48         |        0720 ~ 0767        |   TCP力值/Generalised forces in the TCP    |
+|       TCPForce       |     double     |           6           |         48         |        0720 ~ 0767        |             TCP力值（通过关节电流计算）              |
 |   ToolVectorTarget   |     double     |           6           |         48         |        0768 ~ 0815        | TCP笛卡尔目标坐标值/Target Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation |
 |    TCPSpeedTarget    |     double     |           6           |         48         |        0816 ~ 0863        | TCP笛卡尔目标速度值/Target speed of the tool given in Cartesian coordinates |
 |  MotorTemperatures   |     double     |           6           |         48         |        0864 ~ 0911        | 关节温度/Temperature of each joint in degrees celsius |
@@ -1856,24 +1858,29 @@
 
 ​	上位机可以通过30003端口直接发送一些机器人运动相关指令给机器人，这些指令CR自己定义的；如下表是30003端口的指令列表。可以通过如下指令实现对机器人的运动相关控制；
 
-| 指令           | 描述                          |
-| ------------ | --------------------------- |
-| MovJ         | 点到点运动，目标点位为笛卡尔点位。           |
-| MovL         | 直线运动，目标点位为笛卡尔点位             |
-| JointMovJ    | 点到点运动，目标点位为关节点位             |
-| Jump         | 门型运动，仅支持笛卡尔点位               |
-| RelMovJ      | 以点到点方式运动至笛卡尔偏移位置            |
-| RelMovL      | 以直线运动至笛卡尔偏移位置               |
-| MovLIO       | 直线运动过程中并行设置数字输出端口的状态，可设置多组  |
-| MovJIO       | 点到点运动过程中并行设置数字输出端口的状态，可设置多组 |
-| Arc          | 圆弧运动。需结合其他运动指令完成圆弧运动。       |
-| Circle       | 整圆运动，需结合其他运动指令完成整圆运动        |
-| ServoJ       | 基于关节空间的动态跟随命令               |
-| ServoP       | 基于笛卡尔空间的动态跟随命令              |
-| MoveJog      | 关节点动                        |
-| StartTrace   | 轨迹拟合                        |
-| StartPath    | 轨迹复现                        |
-| StartFCTrace | 带力控的轨迹拟合                    |
+| 指令           | 描述                           |
+| ------------ | ---------------------------- |
+| MovJ         | 点到点运动，目标点位为笛卡尔点位             |
+| MovL         | 直线运动，目标点位为笛卡尔点位              |
+| JointMovJ    | 点到点运动，目标点位为关节点位              |
+| Jump         | 门型运动，仅支持笛卡尔点位                |
+| RelMovJ      | 以点到点方式运动至笛卡尔偏移位置             |
+| RelMovL      | 以直线运动至笛卡尔偏移位置                |
+| MovLIO       | 直线运动过程中并行设置数字输出端口的状态，可设置多组   |
+| MovJIO       | 点到点运动过程中并行设置数字输出端口的状态，可设置多组  |
+| Arc          | 圆弧运动。需结合其他运动指令完成圆弧运动         |
+| Circle       | 整圆运动，需结合其他运动指令完成整圆运动         |
+| ServoJ       | 基于关节空间的动态跟随命令                |
+| ServoP       | 基于笛卡尔空间的动态跟随命令               |
+| MoveJog      | 关节点动                         |
+| StartTrace   | 轨迹拟合                         |
+| StartPath    | 轨迹复现                         |
+| StartFCTrace | 带力控的轨迹拟合                     |
+| RelMovJTool  | 沿工具坐标系进行相对运动，末端运动方式为关节运动     |
+| RelMovLTool  | 沿工具坐标系进行相对运动指令，末端运动方式为直线运动   |
+| RelMovJUser  | 沿用户坐标系进行相对运动指令，末端运动方式为关节运动   |
+| RelMovLUser  | 沿用户坐标系进行相对运动指令，末端运动方式为直线运动   |
+| RelJointMovJ | 沿各轴关节坐标系进行相对运动指令，末端运动方式为关节运动 |
 
 
 
@@ -1992,7 +1999,7 @@
 
 - 功能：以点到点方式运动至笛卡尔偏移位置。
 
-- 格式：RelMovJ(offset1,offset2,offset3,offset4,offset5,offset6,User=index,Tool=index,SpeedJ=R,AccJ=R)  
+- 格式：RelMovJ(offsetX,offsetY,offsetZ,offsetRx,offsetRy,offsetRz,User=index,Tool=index,SpeedJ=R,AccJ=R)  
 
   //其中SpeedJ=R,AccJ=R为可选设置参数，分别表示设置用户坐标系、工具坐标系、关节速度比例以及加速度比例值； 和29999端口设置的SpeedJ、AccJ意义一致；User:用户索引0~9,不填按照上一次设置的值；Tool:工具索引0~9,不填按照上一次设置的值；
 
@@ -2002,22 +2009,24 @@
 
 - 必填参数详解：6
 
-  | 参数名     | 类型     | 含义              |
-  | ------- | ------ | --------------- |
-  | offset1 | double | 关节J1轴方向偏移，单位：度  |
-  | offset2 | double | 关节J2轴方向偏移，单位：度  |
-  | offset3 | double | 关节J3轴方向偏移，单位：度  |
-  | offset4 | double | 关节J4轴方向偏移，单位：度  |
-  | offset5 | double | 关节J5轴方向偏移，单位：度  |
-  | offset6 | double | 关节J6轴轴方向偏移，单位：度 |
+  | 参数名      | 类型     | 含义           |
+  | -------- | ------ | ------------ |
+  | offsetX  | double | X轴方向偏移，单位：mm |
+  | offsetY  | double | Y轴方向偏移，单位：mm |
+  | offsetZ  | double | Z轴方向偏移，单位：mm |
+  | offsetRx | double | Rx 轴位置，单位：度  |
+  | offsetRy | double | Ry 轴位置，单位：度  |
+  | offsetRz | double | Rz 轴位置，单位：度  |
 
 - 返回：
 
-  ErrorID,{},RelMovJ(offset1,offset2,offset3,offset4,offset5,offset6,SpeedJ=R,AccJ=R);
+  ErrorID,{},RelMovJ(offsetX,offsetY,offsetZ,offsetRx,offsetRy,offsetRz,SpeedJ=R,AccJ=R);
 
 - 示例：
 
   RelMovJ(10,10,10,10,10,10)
+
+- 说明：**本条指令暂时废弃，不建议使用；**
 
 ## 4.6 RelMovL
 
@@ -2046,6 +2055,8 @@
 - 示例：
 
   RelMovL(10,10,10)
+
+- 说明：**本条指令暂时废弃，不建议使用；**
 
 ## 4.7 MovLIO
 
@@ -2429,8 +2440,6 @@
 - 说明：**控制器3.5.2版本以及以上版本支持此命令；**
 
 
-
-
 ## 4.17 Sync
 
 - 功能：阻塞程序执行队列指令，待所有队列指令执行完才返回。
@@ -2449,6 +2458,175 @@
 
   Sync()
 
+
+## 4.18 RelMovJTool
+
+- 功能：沿工具坐标系进行相对运动指令，末端运动方式为关节运动。
+
+- 格式：
+
+  RelMovJTool(offsetX, offsetY,offsetZ, offsetRx,offsetRy,offsetRz, Tool,SpeedJ=R, AccJ=R,User=Index)  
+
+  //其中SpeedJ=R,AccJ=R、User=Index为可选设置参数，分别表示设置用关节速度比例以及加速度比例值以及用户坐标系索引； 和29999端口设置的SpeedJ、AccJ意义一致；User:用户索引0~9,不填按照上一次设置的值；Tool为必选参数:工具索引0~9；
+
+- 必填参数数量：7
+
+- 支持端口：30003
+
+- 必填参数详解：7
+
+  | 参数名      | 类型     | 含义                   |
+  | -------- | ------ | -------------------- |
+  | OffsetX  | double | X轴方向偏移，单位：mm         |
+  | OffsetY  | double | Y轴方向偏移，单位：mm         |
+  | OffsetZ  | double | Z轴方向偏移，单位：mm         |
+  | OffsetRx | double | Rx 轴位置，单位：度          |
+  | OffsetRy | double | Ry 轴位置，单位：度          |
+  | OffsetRz | double | Rz 轴位置，单位：度          |
+  | Tool     | int    | 选择已标定的工具坐标系，取值范围：0~9 |
+
+- 返回：
+
+  ErrorID,{},RelMovJTool(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz,Tool,SpeedJ=R, AccJ=R,User=Index);
+
+- 示例：
+
+  RelMovJTool(10,10,10,0,0,0,0)
+
+## 4.19 RelMovLTool
+
+- 功能：沿工具坐标系进行相对运动指令，末端运动方式为直线运动。
+
+- 格式：
+
+  RelMovLTool(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz, Tool,SpeedL=R, AccL=R,User=Index)  
+
+  //其中SpeedL=R,AccL=R、User=Index为可选设置参数，分别表示设置用笛卡尔速度比例以及加速度比例值以及用户坐标系索引； 和29999端口设置的SpeedL、AccL意义一致；User:用户索引0~9,不填按照上一次设置的值；Tool为必选参数:工具索引0~9；
+
+- 必填参数数量：7
+
+- 支持端口：30003
+
+- 必填参数详解：7
+
+  | 参数名      | 类型     | 含义                   |
+  | -------- | ------ | -------------------- |
+  | OffsetX  | double | X轴方向偏移，单位：mm         |
+  | OffsetY  | double | Y轴方向偏移，单位：mm         |
+  | OffsetZ  | double | Z轴方向偏移，单位：mm         |
+  | OffsetRx | double | Rx 轴位置，单位：度          |
+  | OffsetRy | double | Ry 轴位置，单位：度          |
+  | OffsetRz | double | Rz 轴位置，单位：度          |
+  | Tool     | int    | 选择已标定的工具坐标系，取值范围：0~9 |
+
+- 返回：
+
+  ErrorID,{},RelMovLTool(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz,Tool,SpeedL=R, AccL=R,User=Index);
+
+- 示例：
+
+  RelMovLTool(10,10,10,0,0,0,0)
+
+## 4.20 RelMovJUser
+
+- 功能：沿用户坐标系进行相对运动指令，末端运动方式为关节运动。
+
+- 格式：
+
+  RelMovJUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz, User,SpeedJ=R, AccJ=R,Tool=Index)  
+
+  //其中SpeedJ=R,AccJ=R,Tool=Index为可选设置参数，分别表示设置用关节速度比例以及加速度比例值以及工具坐标系索引； 和29999端口设置的SpeedJ、AccJ意义一致；Tool:用户索引0~9,不填按照上一次设置的值；User为必选参数:工具索引0~9；
+
+- 必填参数数量：7 
+
+- 支持端口：30003
+
+- 必填参数详解：7
+
+  | 参数名      | 类型     | 含义                   |
+  | -------- | ------ | -------------------- |
+  | OffsetX  | double | X轴方向偏移，单位：mm         |
+  | OffsetY  | double | Y轴方向偏移，单位：mm         |
+  | OffsetZ  | double | Z轴方向偏移，单位：mm         |
+  | OffsetRx | double | Rx 轴位置，单位：度          |
+  | OffsetRy | double | Ry 轴位置，单位：度          |
+  | OffsetRz | double | Rz 轴位置，单位：度          |
+  | User     | int    | 选择已标定的用户坐标系，取值范围：0~9 |
+
+- 返回：
+
+  ErrorID,{},RelMovJUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz,User,SpeedJ=R, AccJ=R,Tool=Index);
+
+- 示例：
+
+  RelMovJUser(10,10,10,0,0,0,0)
+
+## 4.21 RelMovLUser
+
+- 功能：沿用户坐标系进行相对运动指令，末端运动方式为直线运动。
+
+- 格式：
+
+  RelMovLUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz, User,SpeedL=R, AccL=R,Tool=Index)  
+
+  //其中SpeedL=R,AccL=R,Tool=Index为可选设置参数，分别表示设置用笛卡尔速度比例以及加速度比例值以及工具坐标系索引； 和29999端口设置的SpeedL、AccL意义一致；Tool:用户索引0~9,不填按照上一次设置的值；User为必选参数:工具索引0~9；
+
+- 必填参数数量：7 
+
+- 支持端口：30003
+
+- 必填参数详解：7
+
+  | 参数名      | 类型     | 含义                   |
+  | -------- | ------ | -------------------- |
+  | OffsetX  | double | X轴方向偏移，单位：mm         |
+  | OffsetY  | double | Y轴方向偏移，单位：mm         |
+  | OffsetZ  | double | Z轴方向偏移，单位：mm         |
+  | OffsetRx | double | Rx 轴位置，单位：度          |
+  | OffsetRy | double | Ry 轴位置，单位：度          |
+  | OffsetRz | double | Rz 轴位置，单位：度          |
+  | User     | int    | 选择已标定的用户坐标系，取值范围：0~9 |
+
+- 返回：
+
+  ErrorID,{},RelMovLUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz,User,SpeedL=R, AccL=R,Tool=Index);
+
+- 示例：
+
+  RelMovLUser(10,10,10,0,0,0,0)
+
+## 4.22 RelJointMovJ
+
+- 功能：沿各轴关节坐标系进行相对运动指令，末端运动方式为关节运动。
+
+- 格式：
+
+  RelJointMovJ(Offset1,Offset2,Offset3,Offset4,Offset5,Offset6,SpeedJ=R, AccJ=R)  
+
+  //其中SpeedJ=R,AccJ=R为可选设置参数，分别表示设置用关节速度比例以及加速度比例值； 和29999端口设置的SpeedJ、AccJ意义一致；
+
+- 必填参数数量：6
+
+- 支持端口：30003
+
+- 必填参数详解：6
+
+  | 参数名     | 类型     | 含义           |
+  | ------- | ------ | ------------ |
+  | Offset1 | double | 关节1的偏移值，单位：度 |
+  | Offset2 | double | 关节2的偏移值，单位：度 |
+  | Offset3 | double | 关节3的偏移值，单位：度 |
+  | Offset4 | double | 关节4的偏移值，单位：度 |
+  | Offset5 | double | 关节5的偏移值，单位：度 |
+  | Offset6 | double | 关节6的偏移值，单位：度 |
+
+- 返回：
+
+  ErrorID,{},RelJointMovJ(Offset1,Offset2,Offset3,Offset4,Offset5,Offset6,SpeedJ=R, AccJ=R);
+
+- 示例：
+
+  RelJointMovJ(10,10,10,0,0,0)
 
 
 
