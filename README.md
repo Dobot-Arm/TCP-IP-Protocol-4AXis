@@ -2535,7 +2535,7 @@
 
   RelMovJUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz, User,SpeedJ=R, AccJ=R,Tool=Index)  
 
-  //其中SpeedJ=R,AccJ=R,Tool=Index为可选设置参数，分别表示设置用关节速度比例以及加速度比例值以及工具坐标系索引； 和29999端口设置的SpeedJ、AccJ意义一致；Tool:用户索引0~9,不填按照上一次设置的值；User为必选参数:工具索引0~9；
+  //其中SpeedJ=R,AccJ=R,Tool=Index为可选设置参数，分别表示设置用关节速度比例以及加速度比例值以及工具坐标系索引； 和29999端口设置的SpeedJ、AccJ意义一致；Tool:工具索引0~9,不填按照上一次设置的值；User为必选参数:用户索引0~9；
 
 - 必填参数数量：7 
 
@@ -2569,7 +2569,7 @@
 
   RelMovLUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz, User,SpeedL=R, AccL=R,Tool=Index)  
 
-  //其中SpeedL=R,AccL=R,Tool=Index为可选设置参数，分别表示设置用笛卡尔速度比例以及加速度比例值以及工具坐标系索引； 和29999端口设置的SpeedL、AccL意义一致；Tool:用户索引0~9,不填按照上一次设置的值；User为必选参数:工具索引0~9；
+  //其中SpeedL=R,AccL=R,Tool=Index为可选设置参数，分别表示设置用笛卡尔速度比例以及加速度比例值以及工具坐标系索引； 和29999端口设置的SpeedL、AccL意义一致；Tool:工具索引0~9,不填按照上一次设置的值；User为必选参数:用户索引0~9；
 
 - 必填参数数量：7 
 
