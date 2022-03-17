@@ -34,6 +34,7 @@
 - V2.7-2022/02/11:  带力控的轨迹拟合添加说明，需要在执行StartFCTrace后加上Sync；
 - V2.8-2022/02/16:  ServoP/ServoJ指令添加使用频率限制，修改SetCollideDrag开关状态，改为0关闭，1开启，与文档其它设置指令统一；
 - V2.9-2022/03/12：JointMovJ指令优化；删掉多余的不建议使用的指令；新增MG400/M1Pro版本支持的指令；
+- V2.10-2022/03/17：SetArmOrientation指令新增M1Pro指令的描述；添加实时数据反馈的产品支持功能；
 
 
 
@@ -740,28 +741,28 @@
 
 - 功能：设置手系指令。 
 - 格式：SetArmOrientation(LorR,UorD,ForN,Config6)
-- 参数数量：4
+- 可选参数数量：4
 - 支持端口：29999
 
 
-- 参数详解：4
+- 可选参数详解：4
 
-  | 参数名     | 类型   | 含义                                       |
-  | ------- | ---- | ---------------------------------------- |
-  | LorR    | int  | 臂方向向前/向后(1/-1)<br /> 1：向前<br />-1：向后     |
-  | UorD    | int  | 臂方向肘上/肘下(1/-1)<br /> 1：肘上<br />-1：肘下     |
-  | ForN    | int  | 臂方向腕部是否翻转(1/-1)<br />  1：腕不翻转<br />-1：腕翻转 |
+  | 参数名  | 类型 | 含义                                                         |
+  | ------- | ---- | ------------------------------------------------------------ |
+  | LorR    | int  | 臂方向向前/向后(1/-1)<br /> 1：向前  （其中对于M1Pro表示左）<br />-1：向后  （其中对于M1Pro表示右） |
+  | UorD    | int  | 臂方向肘上/肘下(1/-1)<br /> 1：肘上<br />-1：肘下            |
+  | ForN    | int  | 臂方向腕部是否翻转(1/-1)<br />  1：腕不翻转<br />-1：腕翻转  |
   | Config6 | int  | 第六轴角度标识<br />  -1,-2...：第6轴角度为[0,-90]为-1；[-90,-180]为-2；以此类推<br />1,2...：第6轴角度为[0,90]为1；[90,180]为2；以此类推 |
 
 - 返回：
 
-  ErrorID,{},LimZ(zValue);
+  ErrorID,{},SetArmOrientation(LorR,UorD,ForN,Config6);
 
 - 示例：
 
   SetArmOrientation(1,1,-1,1)
 
-- **此条指令为CR系列机器人特有；**
+- **此条指令为CR系列以及M1Pro机器人特有；可选参数数量：1/4;填一个参数默认为M1Pro机型，表示左右手系；填写四个参数表示CR系列机器参数；其他参数数量填写将会返回报错；**
 
   
 
@@ -1972,85 +1973,85 @@
 
 ​	30004端口即实时反馈端口(30004、30005以及30006端口将在控制器3.5.2+版本支持)，客户端**每8ms**能收到一次机器人如下表所示的信息。30005服务器端口**每200ms反馈机器人的信息**，30006端口为**可配置**的反馈机器人信息端口(默认为每**50ms**反馈)；通过实时反馈端口每次收到的数据包有1440个字节，这些字节以标准的格式排列。下表是字节排列的顺序表。(30006端口的实时数据的配置更新可以在线修改后，实时生效；）
 
-|      意义/Meaning      |   数据类型/Type    | 值的数目/Number of values | 字节大小/Size in bytes | 字节位置值/Byte position value |                 描述/Notes                 |
-| :------------------: | :------------: | :-------------------: | :----------------: | :-----------------------: | :--------------------------------------: |
-|     MessageSize      | unsigned short |           1           |         2          |        0000 ~ 0001        |  消息字节总长度/Total message length in bytes   |
-|                      | unsigned short |           3           |         6          |        0002 ~ 0007        |                   保留位                    |
-|    DigitalInputs     |     uint64     |           1           |         8          |        0008 ~ 0015        | 数字输入/Current state of the digital inputs. |
-|    DigitalOutputs    |     uint64     |           1           |         8          |        0016 ~ 0023        |                   数字输出                   |
-|      RobotMode       |     uint64     |           1           |         8          |        0024 ~ 0031        |             机器人模式/Robot mode             |
-|      TimeStamp       |     uint64     |           1           |         8          |        0032 ~ 0039        |                时间戳（单位ms）                 |
-|                      |     uint64     |           1           |         8          |        0040 ~ 0047        |                   保留位                    |
-|      TestValue       |     uint64     |           1           |         8          |        0048 ~ 0055        |     内存结构测试标准值  0x0123 4567 89AB CDEF     |
-|                      |     double     |           1           |         8          |        0056 ~ 0063        |                   保留位                    |
-|     SpeedScaling     |     double     |           1           |         8          |        0064 ~ 0071        | 速度比例/Speed scaling of the trajectory limiter |
-|  LinearMomentumNorm  |     double     |           1           |         8          |        0072 ~ 0079        | 机器人当前动量/Norm of Cartesian linear momentum(需要特定硬件版本) |
-|        VMain         |     double     |           1           |         8          |        0080 ~ 0087        |     控制板电压/Masterboard: Main voltage      |
-|        VRobot        |     double     |           1           |         8          |        0088 ~ 0095        |  机器人电压/Masterboard: Robot voltage (48V)  |
-|        IRobot        |     double     |           1           |         8          |        0096 ~ 0103        |     机器人电流/Masterboard: Robot current     |
-|                      |     double     |           1           |         8          |        0104 ~ 0111        |                   保留位                    |
-|                      |     double     |           1           |         8          |        0112 ~ 0119        |                   保留位                    |
-|  ToolAcceleroMeter   |     double     |           3           |         24         |        0120 ~ 0143        | TCP加速度/Tool x,y and z accelerometer values(需要特定硬件版本) |
-|    ElbowPosition     |     double     |           3           |         24         |        0144 ~ 0167        |       肘位置/Elbow position(需要特定硬件版本)       |
-|    ElbowVelocity     |     double     |           3           |         24         |        0168 ~ 0191        |       肘速度/Elbow velocity(需要特定硬件版本)       |
-|       QTarget        |     double     |           6           |         48         |        0192 ~ 0239        |      目标关节位置/Target joint positions       |
-|       QDTarget       |     double     |           6           |         48         |        0240 ~ 0287        |      目标关节速度/Target joint velocities      |
-|      QDDTarget       |     double     |           6           |         48         |        0288 ~ 0335        |    目标关节加速度/Target joint accelerations    |
-|       ITarget        |     double     |           6           |         48         |        0336 ~ 0383        |       目标关节电流/Target joint currents       |
-|       MTarget        |     double     |           6           |         48         |        0384 ~ 0431        |  目标关节扭矩/Target joint moments (torques)   |
-|       QActual        |     double     |           6           |         48         |        0432 ~ 0479        |      实际关节位置/Actual joint positions       |
-|       QDActual       |     double     |           6           |         48         |        0480 ~ 0527        |      实际关节速度/Actual joint velocities      |
-|       IActual        |     double     |           6           |         48         |        0528 ~ 0575        |       实际关节电流/Actual joint currents       |
-|    ActualTCPForce    |     double     |           6           |         48         |        0576 ~ 0623        |            TCP传感器力值(通过六维力计算)             |
-|   ToolVectorActual   |     double     |           6           |         48         |        0624 ~ 0671        | TCP笛卡尔实际坐标值/Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation |
-|    TCPSpeedActual    |     double     |           6           |         48         |        0672 ~ 0719        | TCP笛卡尔实际速度值/Actual speed of the tool given in Cartesian coordinates |
-|       TCPForce       |     double     |           6           |         48         |        0720 ~ 0767        |             TCP力值（通过关节电流计算）              |
-|   ToolVectorTarget   |     double     |           6           |         48         |        0768 ~ 0815        | TCP笛卡尔目标坐标值/Target Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation |
-|    TCPSpeedTarget    |     double     |           6           |         48         |        0816 ~ 0863        | TCP笛卡尔目标速度值/Target speed of the tool given in Cartesian coordinates |
-|  MotorTemperatures   |     double     |           6           |         48         |        0864 ~ 0911        | 关节温度/Temperature of each joint in degrees celsius |
-|      JointModes      |     double     |           6           |         48         |        0912 ~ 0959        |        关节控制模式/Joint control modes        |
-|       VActual        |     double     |           6           |         48         |        960  ~ 1007        |        关节电压/Actual joint voltages        |
-|       HandType       |      char      |           4           |         4          |        1008 ~ 1011        |                    手系                    |
-|         User         |      char      |           1           |         1          |           1012            |                   用户坐标                   |
-|         Tool         |      char      |           1           |         1          |           1013            |                   工具坐标                   |
-|     RunQueuedCmd     |      char      |           1           |         1          |           1014            |                 算法队列运行标志                 |
-|     PauseCmdFlag     |      char      |           1           |         1          |           1015            |                 算法队列暂停标志                 |
-|    VelocityRatio     |      char      |           1           |         1          |           1016            |              关节速度比例(0~100)               |
-|  AccelerationRatio   |      char      |           1           |         1          |           1017            |              关节加速度比例(0~100)              |
-|      JerkRatio       |      char      |           1           |         1          |           1018            |             关节加加速度比例(0~100)              |
-|   XYZVelocityRatio   |      char      |           1           |         1          |           1019            |             笛卡尔位置速度比例(0~100)             |
-|    RVelocityRatio    |      char      |           1           |         1          |           1020            |             笛卡尔姿态速度比例(0~100)             |
-| XYZAccelerationRatio |      char      |           1           |         1          |           1021            |            笛卡尔位置加速度比例(0~100)             |
-|  RAccelerationRatio  |      char      |           1           |         1          |           1022            |            笛卡尔姿态加速度比例(0~100)             |
-|     XYZJerkRatio     |      char      |           1           |         1          |           1023            |            笛卡尔位置加加速度比例(0~100)            |
-|      RJerkRatio      |      char      |           1           |         1          |           1024            |            笛卡尔姿态加加速度比例(0~100)            |
-|     BrakeStatus      |      char      |           1           |         1          |           1025            |                 机器人抱闸状态                  |
-|     EnableStatus     |      char      |           1           |         1          |           1026            |                 机器人使能状态                  |
-|      DragStatus      |      char      |           1           |         1          |           1027            |                 机器人拖拽状态                  |
-|    RunningStatus     |      char      |           1           |         1          |           1028            |                 机器人运行状态                  |
-|     ErrorStatus      |      char      |           1           |         1          |           1029            |                 机器人报警状态                  |
-|      JogStatus       |      char      |           1           |         1          |           1030            |                 机器人点动状态                  |
-|      RobotType       |      char      |           1           |         1          |           1031            |                   机器类型                   |
-|   DragButtonSignal   |      char      |           1           |         1          |           1032            |                 按钮板拖拽信号                  |
-|  EnableButtonSignal  |      char      |           1           |         1          |           1033            |                 按钮板使能信号                  |
-|  RecordButtonSignal  |      char      |           1           |         1          |           1034            |                 按钮板录制信号                  |
-| ReappearButtonSignal |      char      |           1           |         1          |           1035            |                 按钮板复现信号                  |
-|   JawButtonSignal    |      char      |           1           |         1          |           1036            |                按钮板夹爪控制信号                 |
-|    SixForceOnline    |      char      |           1           |         1          |           1037            |                 六维力在线状态                  |
-|     Reserve2[82]     |      char      |           1           |         82         |         1038-1119         |                   保留位                    |
-|      MActual[6]      |     double     |           6           |         48         |        1120 ~ 1167        |                   实际扭矩                   |
-|         Load         |     double     |           1           |         8          |         1168-1175         |                  负载重量kg                  |
-|       CenterX        |     double     |           1           |         8          |         1176-1183         |                X方向偏心距离mm                 |
-|       CenterY        |     double     |           1           |         8          |         1184-1191         |                Y方向偏心距离mm                 |
-|       CenterZ        |     double     |           1           |         8          |         1192-1199         |                Z方向偏心距离mm                 |
-|       User[6]        |     double     |           6           |         48         |         1200-1247         |                  用户坐标值                   |
-|       Tool[6]        |     double     |           6           |         48         |         1248-1295         |                  工具坐标值                   |
-|      TraceIndex      |     double     |           1           |         8          |         1296-1303         |                 轨迹复现运行索引                 |
-|   SixForceValue[6]   |     double     |           6           |         48         |         1304-1351         |                当前六维力数据原始值                |
-| TargetQuaternion[4]  |     double     |           4           |         32         |         1352-1383         |           [qw,qx,qy,qz] 目标四元数            |
-| ActualQuaternion[4]  |     double     |           4           |         32         |         1384-1415         |           [qw,qx,qy,qz]  实际四元数           |
-|     Reserve3[24]     |      char      |           1           |         24         |        1416 ~ 1440        |                   保留位                    |
-|        TOTAL         |                |                       |        1440        |                           |             1440byte package             |
+|     意义/Meaning     | 数据类型/Type  | 值的数目/Number of values | 字节大小/Size in bytes | 字节位置值/Byte position value |                          描述/Notes                          | 支持产品    |
+| :------------------: | :------------: | :-----------------------: | :--------------------: | :----------------------------: | :----------------------------------------------------------: | ----------- |
+|     MessageSize      | unsigned short |             1             |           2            |          0000 ~ 0001           |         消息字节总长度/Total message length in bytes         | CR\MG\M1Pro |
+|                      | unsigned short |             3             |           6            |          0002 ~ 0007           |                            保留位                            | CR\MG\M1Pro |
+|    DigitalInputs     |     uint64     |             1             |           8            |          0008 ~ 0015           |        数字输入/Current state of the digital inputs.         | CR\MG\M1Pro |
+|    DigitalOutputs    |     uint64     |             1             |           8            |          0016 ~ 0023           |                           数字输出                           | CR\MG\M1Pro |
+|      RobotMode       |     uint64     |             1             |           8            |          0024 ~ 0031           |                    机器人模式/Robot mode                     | CR\MG\M1Pro |
+|      TimeStamp       |     uint64     |             1             |           8            |          0032 ~ 0039           |                       时间戳（单位ms）                       | CR          |
+|                      |     uint64     |             1             |           8            |          0040 ~ 0047           |                            保留位                            | CR\MG\M1Pro |
+|      TestValue       |     uint64     |             1             |           8            |          0048 ~ 0055           |          内存结构测试标准值  0x0123 4567 89AB CDEF           | CR\MG\M1Pro |
+|                      |     double     |             1             |           8            |          0056 ~ 0063           |                            保留位                            | CR\MG\M1Pro |
+|     SpeedScaling     |     double     |             1             |           8            |          0064 ~ 0071           |       速度比例/Speed scaling of the trajectory limiter       | CR\MG       |
+|  LinearMomentumNorm  |     double     |             1             |           8            |          0072 ~ 0079           | 机器人当前动量/Norm of Cartesian linear momentum(需要特定硬件版本) | CR          |
+|        VMain         |     double     |             1             |           8            |          0080 ~ 0087           |             控制板电压/Masterboard: Main voltage             | CR          |
+|        VRobot        |     double     |             1             |           8            |          0088 ~ 0095           |         机器人电压/Masterboard: Robot voltage (48V)          | CR          |
+|        IRobot        |     double     |             1             |           8            |          0096 ~ 0103           |            机器人电流/Masterboard: Robot current             | CR          |
+|                      |     double     |             1             |           8            |          0104 ~ 0111           |                            保留位                            | CR\MG\M1Pro |
+|                      |     double     |             1             |           8            |          0112 ~ 0119           |                            保留位                            | CR\MG\M1Pro |
+|  ToolAcceleroMeter   |     double     |             3             |           24           |          0120 ~ 0143           | TCP加速度/Tool x,y and z accelerometer values(需要特定硬件版本) | CR          |
+|    ElbowPosition     |     double     |             3             |           24           |          0144 ~ 0167           |           肘位置/Elbow position(需要特定硬件版本)            | CR          |
+|    ElbowVelocity     |     double     |             3             |           24           |          0168 ~ 0191           |           肘速度/Elbow velocity(需要特定硬件版本)            | CR          |
+|       QTarget        |     double     |             6             |           48           |          0192 ~ 0239           |             目标关节位置/Target joint positions              | CR\MG       |
+|       QDTarget       |     double     |             6             |           48           |          0240 ~ 0287           |             目标关节速度/Target joint velocities             | CR\MG       |
+|      QDDTarget       |     double     |             6             |           48           |          0288 ~ 0335           |          目标关节加速度/Target joint accelerations           | CR\MG       |
+|       ITarget        |     double     |             6             |           48           |          0336 ~ 0383           |              目标关节电流/Target joint currents              | CR\MG       |
+|       MTarget        |     double     |             6             |           48           |          0384 ~ 0431           |         目标关节扭矩/Target joint moments (torques)          | CR\MG       |
+|       QActual        |     double     |             6             |           48           |          0432 ~ 0479           |             实际关节位置/Actual joint positions              | CR\MG       |
+|       QDActual       |     double     |             6             |           48           |          0480 ~ 0527           |             实际关节速度/Actual joint velocities             | CR\MG       |
+|       IActual        |     double     |             6             |           48           |          0528 ~ 0575           |              实际关节电流/Actual joint currents              | CR\MG       |
+|    ActualTCPForce    |     double     |             6             |           48           |          0576 ~ 0623           |                TCP传感器力值(通过六维力计算)                 | CR\MG       |
+|   ToolVectorActual   |     double     |             6             |           48           |          0624 ~ 0671           | TCP笛卡尔实际坐标值/Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG       |
+|    TCPSpeedActual    |     double     |             6             |           48           |          0672 ~ 0719           | TCP笛卡尔实际速度值/Actual speed of the tool given in Cartesian coordinates | CR\MG       |
+|       TCPForce       |     double     |             6             |           48           |          0720 ~ 0767           |                 TCP力值（通过关节电流计算）                  | CR\MG       |
+|   ToolVectorTarget   |     double     |             6             |           48           |          0768 ~ 0815           | TCP笛卡尔目标坐标值/Target Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG       |
+|    TCPSpeedTarget    |     double     |             6             |           48           |          0816 ~ 0863           | TCP笛卡尔目标速度值/Target speed of the tool given in Cartesian coordinates | CR\MG       |
+|  MotorTemperatures   |     double     |             6             |           48           |          0864 ~ 0911           |    关节温度/Temperature of each joint in degrees celsius     | CR          |
+|      JointModes      |     double     |             6             |           48           |          0912 ~ 0959           |               关节控制模式/Joint control modes               | CR          |
+|       VActual        |     double     |             6             |           48           |          960  ~ 1007           |                关节电压/Actual joint voltages                | CR          |
+|       HandType       |      char      |             4             |           4            |          1008 ~ 1011           |                             手系                             | CR          |
+|         User         |      char      |             1             |           1            |              1012              |                           用户坐标                           | CR          |
+|         Tool         |      char      |             1             |           1            |              1013              |                           工具坐标                           | CR          |
+|     RunQueuedCmd     |      char      |             1             |           1            |              1014              |                       算法队列运行标志                       | CR          |
+|     PauseCmdFlag     |      char      |             1             |           1            |              1015              |                       算法队列暂停标志                       | CR          |
+|    VelocityRatio     |      char      |             1             |           1            |              1016              |                     关节速度比例(0~100)                      | CR          |
+|  AccelerationRatio   |      char      |             1             |           1            |              1017              |                    关节加速度比例(0~100)                     | CR          |
+|      JerkRatio       |      char      |             1             |           1            |              1018              |                   关节加加速度比例(0~100)                    | CR          |
+|   XYZVelocityRatio   |      char      |             1             |           1            |              1019              |                  笛卡尔位置速度比例(0~100)                   | CR          |
+|    RVelocityRatio    |      char      |             1             |           1            |              1020              |                  笛卡尔姿态速度比例(0~100)                   | CR          |
+| XYZAccelerationRatio |      char      |             1             |           1            |              1021              |                 笛卡尔位置加速度比例(0~100)                  | CR          |
+|  RAccelerationRatio  |      char      |             1             |           1            |              1022              |                 笛卡尔姿态加速度比例(0~100)                  | CR          |
+|     XYZJerkRatio     |      char      |             1             |           1            |              1023              |                笛卡尔位置加加速度比例(0~100)                 | CR          |
+|      RJerkRatio      |      char      |             1             |           1            |              1024              |                笛卡尔姿态加加速度比例(0~100)                 | CR          |
+|     BrakeStatus      |      char      |             1             |           1            |              1025              |                        机器人抱闸状态                        | CR          |
+|     EnableStatus     |      char      |             1             |           1            |              1026              |                        机器人使能状态                        | CR          |
+|      DragStatus      |      char      |             1             |           1            |              1027              |                        机器人拖拽状态                        | CR          |
+|    RunningStatus     |      char      |             1             |           1            |              1028              |                        机器人运行状态                        | CR          |
+|     ErrorStatus      |      char      |             1             |           1            |              1029              |                        机器人报警状态                        | CR          |
+|     JogStatusCR      |      char      |             1             |           1            |              1030              |                        机器人点动状态                        | CR          |
+|     CRRobotType      |      char      |             1             |           1            |              1031              |                           机器类型                           | CR          |
+|   DragButtonSignal   |      char      |             1             |           1            |              1032              |                        按钮板拖拽信号                        | CR          |
+|  EnableButtonSignal  |      char      |             1             |           1            |              1033              |                        按钮板使能信号                        | CR          |
+|  RecordButtonSignal  |      char      |             1             |           1            |              1034              |                        按钮板录制信号                        | CR          |
+| ReappearButtonSignal |      char      |             1             |           1            |              1035              |                        按钮板复现信号                        | CR          |
+|   JawButtonSignal    |      char      |             1             |           1            |              1036              |                      按钮板夹爪控制信号                      | CR          |
+|    SixForceOnline    |      char      |             1             |           1            |              1037              |                        六维力在线状态                        | CR          |
+|     Reserve2[82]     |      char      |             1             |           82           |           1038-1119            |                            保留位                            | CR\MG\M1Pro |
+|      MActual[6]      |     double     |             6             |           48           |          1120 ~ 1167           |                           实际扭矩                           | CR          |
+|         Load         |     double     |             1             |           8            |           1168-1175            |                          负载重量kg                          | CR\MG\M1Pro |
+|       CenterX        |     double     |             1             |           8            |           1176-1183            |                       X方向偏心距离mm                        | CR\MG\M1Pro |
+|       CenterY        |     double     |             1             |           8            |           1184-1191            |                       Y方向偏心距离mm                        | CR\MG\M1Pro |
+|       CenterZ        |     double     |             1             |           8            |           1192-1199            |                       Z方向偏心距离mm                        | CR\MG\M1Pro |
+|       User[6]        |     double     |             6             |           48           |           1200-1247            |                          用户坐标值                          | CR          |
+|       Tool[6]        |     double     |             6             |           48           |           1248-1295            |                          工具坐标值                          | CR          |
+|      TraceIndex      |     double     |             1             |           8            |           1296-1303            |                       轨迹复现运行索引                       | CR          |
+|   SixForceValue[6]   |     double     |             6             |           48           |           1304-1351            |                     当前六维力数据原始值                     | CR          |
+| TargetQuaternion[4]  |     double     |             4             |           32           |           1352-1383            |                   [qw,qx,qy,qz] 目标四元数                   | CR          |
+| ActualQuaternion[4]  |     double     |             4             |           32           |           1384-1415            |                  [qw,qx,qy,qz]  实际四元数                   | CR          |
+|     Reserve3[24]     |      char      |             1             |           24           |          1416 ~ 1440           |                            保留位                            | CR\MG\M1Pro |
+|        TOTAL         |                |                           |          1440          |                                |                       1440byte package                       |             |
 
 其中Robot Mode返回机器人模式：                        
 
