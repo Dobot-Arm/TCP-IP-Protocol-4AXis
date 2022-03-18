@@ -758,9 +758,13 @@
 
   ErrorID,{},SetArmOrientation(LorR,UorD,ForN,Config6);
 
-- 示例：
+- CR产品手势设置示例：
 
   SetArmOrientation(1,1,-1,1)
+
+- M1Pro产品手势设置左手示例：
+
+  SetArmOrientation(1)
 
 - **此条指令为CR系列以及M1Pro机器人特有；可选参数数量：1/4;填一个参数默认为M1Pro机型，表示左右手系；填写四个参数表示CR系列机器参数；其他参数数量填写将会返回报错；**
 
@@ -2011,7 +2015,7 @@
 |  MotorTemperatures   |     double     |             6             |           48           |          0864 ~ 0911           |    关节温度/Temperature of each joint in degrees celsius     | CR          |
 |      JointModes      |     double     |             6             |           48           |          0912 ~ 0959           |               关节控制模式/Joint control modes               | CR          |
 |       VActual        |     double     |             6             |           48           |          960  ~ 1007           |                关节电压/Actual joint voltages                | CR          |
-|       HandType       |      char      |             4             |           4            |          1008 ~ 1011           |                             手系                             | CR          |
+|       HandType       |      char      |             4             |           4            |          1008 ~ 1011           |                             手系                             | CR\M1Pro    |
 |         User         |      char      |             1             |           1            |              1012              |                           用户坐标                           | CR          |
 |         Tool         |      char      |             1             |           1            |              1013              |                           工具坐标                           | CR          |
 |     RunQueuedCmd     |      char      |             1             |           1            |              1014              |                       算法队列运行标志                       | CR          |
@@ -2103,6 +2107,8 @@
   ​	当前值为8表示位置模式；
 
   ​	当前值为10表示力矩模式；
+
+- 其中HandType包含4个char 类型的参数，对于CR系列分别表示LorR、UorD、ForN、Config6四个参数；M1Pro产品仅第一个参数有意义，代表左右手系；详情参考第3.23章节的SetArmOrientation指令；
 
 - 其中RobotType表示机器类型：
 
