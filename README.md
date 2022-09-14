@@ -40,6 +40,7 @@
 - V2.10-2022/03/17：SetArmOrientation指令新增M1Pro指令的描述；添加实时数据反馈的产品支持功能；
 - V2.11-2022/03/18：为保证统一性SetArmOrientation对M1Pro采用之前的0/1表示左右手系描述，实时反馈也有说明；运动指令添加对MG400/M1Pro的四轴产品的说明；
 - V2.12-2022/03/21:MoveJog指令的CoordType的描述优化；
+- V2.13-2022/08/12:MG400 getPose指令增加可选参数，更新MG400无法获取TCPForce，增加MG400实时获取TCPSpeed反馈。
 
 
 
@@ -1189,9 +1190,9 @@
 
 - 功能：获取笛卡尔坐标系下机械臂的实时位姿(如果设置了用户坐标系或工具坐标系，则获取的位姿为当前坐标系下的位姿)
 
-- 格式：GetPose()
+- 格式：GetPose(user,tool)
 
-- 参数数量：0
+- 参数数量：0/2
 
 - 支持端口：29999
 
@@ -1199,10 +1200,19 @@
 
   ErrorID,{X,Y,Z,Rx,Ry,Rz},GetPose();     //{X,Y,Z,Rx,Ry,Rz}表示当前位置的笛卡尔坐标值；
 
+- 参数详解：
+
+  | 参数名 | 类型 | 含义             |
+  | ------ | ---- | ---------------- |
+  | user   | int  | 用户坐标系索引号 |
+  | tool   | int  | 工具坐标系索引号 |
+  
 - 示例：
 
-  GetPose()
+  默认参数返回上位机选择坐标系的位姿，同时传入user和tool索引值返回指定坐标系下的位姿
 
+  GetPose()
+  
   返回：0,{-473.0,-141.0,469.0,-180.0,0.0,90.0},GetPose();
   
   
@@ -2014,7 +2024,7 @@
 |    ActualTCPForce    |     double     |             6             |           48           |          0576 ~ 0623           |                TCP传感器力值(通过六维力计算)                 | CR\MG       |
 |   ToolVectorActual   |     double     |             6             |           48           |          0624 ~ 0671           | TCP笛卡尔实际坐标值/Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG       |
 |    TCPSpeedActual    |     double     |             6             |           48           |          0672 ~ 0719           | TCP笛卡尔实际速度值/Actual speed of the tool given in Cartesian coordinates | CR\MG       |
-|       TCPForce       |     double     |             6             |           48           |          0720 ~ 0767           |                 TCP力值（通过关节电流计算）                  | CR\MG       |
+|       TCPForce       |     double     |             6             |           48           |          0720 ~ 0767           |                 TCP力值（通过关节电流计算）                  | CR          |
 |   ToolVectorTarget   |     double     |             6             |           48           |          0768 ~ 0815           | TCP笛卡尔目标坐标值/Target Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG       |
 |    TCPSpeedTarget    |     double     |             6             |           48           |          0816 ~ 0863           | TCP笛卡尔目标速度值/Target speed of the tool given in Cartesian coordinates | CR\MG       |
 |  MotorTemperatures   |     double     |             6             |           48           |          0864 ~ 0911           |    关节温度/Temperature of each joint in degrees celsius     | CR          |
