@@ -1,22 +1,25 @@
- 
 
 # 1. Overview
 
-CR robots now support two remote control modes: **remote I/O mode** and **remote Modbus mode**. For details about the control mode, please see Software Usage Instructions > Settings > Remote Control in *Dobot-CR-Series Robot-App-User-Guide*. 
+Dobot industrial robots now support two remote control modes: **remote I/O mode** and **remote Modbus mode**. For details about the control mode, see Setting > Remote Control in *Dobot CRStudio UserGuide*. 
 
-The above two modes are mainly for the **remote control of running scripts**. As the communication based on TCP/IP has high reliability, strong practicability and high performance with low cost, many industrial automation projects have a wide demand for control robots that support TCP/IP protocol. So CR robots, designed on the basis of TCP/IP protocol, provide rich interfaces for interaction with external devices.
+The above two modes are mainly for the **remote control of running scripts**. As the communication based on TCP/IP has high reliability, strong practicability and high performance with low cost, many industrial automation projects have a wide demand for control robots that support TCP/IP protocol. So CR/MG400/M1 Pro robots, designed on the basis of TCP/IP protocol, provide rich interfaces for interaction with external devices.
 
-Controller version requirements to support TCP/IP protocol, CR series controller version should be V3.5.1.19 or above, MG400/M1Pro controller version should be V1.5.5.0 or above.
+In terms of the controller version to support TCP/IP protocol, CR series controller version should be V3.5.1.19 or above, and MG400/M1Pro controller version should be V1.5.5.0 or above.
 
 
 
 # 2. Message Format
 
-According to the design, CR robots will open 29999 and 30003 server ports; 29999 server port (hereinafter referred to as Dashboard port) is responsible for receiving some simple instructions by sending and receiving one by one. That is, after receiving the agreed message format from the client, the Dashboard port will give feedback to the client. 30003 server port (hereinafter referred to as the real-time feedback port) feeds back the robot information. It only receives the agreed message format from the client but does not give feedback. Port 30003 is split into port 30003 and port 30004. It is expected to be implemented in controller version 3.5.2. Controller version 3.5.1 currently has only one 30003 port for real-time feedback or sending motion commands.
+According to the design, CR/MG400/M1 Pro robots will open 29999, 30003, 30004, 30005 and 30006 server ports. 
 
-30004 port (hereinafter referred to as real-time feedback port) feeds robot information every 8ms. 30005 port provides robot information every 200ms. 30006 port is a configurable port for feedback robot information. By default, 30006 port provides feedback every 50ms.
+Server port 29999  (hereinafter referred to as Dashboard port) is responsible for receiving some simple commands by sending and receiving one by one. That is, after receiving the agreed message format from the client, the Dashboard port will give feedback to the client. 
 
-For example, the ENABLEROBOT() command, ENABLEROBOT() command, and ENABLEROBOT() command represent the same command and are executed as the enabling command.
+Server port 30003  (hereinafter referred to as the real-time feedback port) feeds back the robot information. It only receives the agreed message format from the client but does not give feedback. (Note: Port 30003 port is split into port 30003 and port 30004, which is expected to be implemented in controller version 3.5.2. Controller version 3.5.1 currently has only one 30003 port for real-time feedback or sending motion commands.)
+
+Server port 30004 (hereinafter referred to as real-time feedback port) feeds back robot information every 8ms. Port 30005 provides robot information every 200ms. Port 30006 is a configurable port to feed back robot information. By default, port 30006 provides feedback every 50ms.
+
+Note: The ENABLEROBOT() command, enablerobot() command, and eNabLErobOt() command represent the same command and are all executed as the enabling command.
 
 
 
@@ -34,31 +37,30 @@ Both message commands and message responses are in ASCII format (string).
 
 `"ErrorID,{value,...,valuen},`Message name(Param1,Param2,Param3……Paramn);"`
 
-The message format is shown as above. If the ErrorID is 0, the command is received successfully.
-A non-zero return indicates an error in the command. See Section 6 for a detailed description of the error.
-{value1,value2,value3,...Valuen} represents the return value. If there is no return value, {} is returned.
-Message name (Param1,Param2,Param3......Paramn) indicates the content delivered.
+The message format is shown as above. 
+If the ErrorID is 0, the command is received successfully. If the ErrorID is a non-zero value, it refers to an error in the command. See Chapter 6 for a detailed description.
+
+{value1,value2,value3,...Valuen} represents the return value. If there is no return value, {} will be returned.
+
+Message name (Param1,Param2,Param3......Paramn) refers to the content delivered.
 
 For example:
 
 ```
 MovL(-500,100,200,150,0,90)
 ```
-
-
-Return: 0,{},MovL(-500,100,200,150,0,90);   //0: received successfully. No return value.
+Return: 0,{},MovL(-500,100,200,150,0,90);   //0: received successfully. If there is no return value, {} will be returned.
 
 ```
 Mov(-500,100,200,150,0,90)
 ```
-
-Return: -10000,{},Mov(-500,100,200,150,0,90);   //-10000: command error no return value.
+Return: -10000,{},Mov(-500,100,200,150,0,90);   //-10000: command error. If there is no return value, {} will be returned.
 
 
 
 # 3. Communication Protocol—Dashboard Port
 
-The upper computer can directly send some simple instructions to the robot through 29999 port. These instructions are defined by CR, and these functions are called Dashboard. The table below is the Dashboard instruction list. The Dashboard commands can be used to control the robot, including enabling/disabling and resetting the robot.
+The upper computer can directly send some simple commands to the robot through 29999 port. These instructions are defined by CR, and these functions are called Dashboard. The table below is the Dashboard command list. The Dashboard commands can be used to control the robot, including enabling/disabling and resetting the robot.
 
 The commands related to robot setting are as follows: 
 
@@ -136,7 +138,7 @@ The commands related to robot setting are as follows:
 
 - Optional parameters: 
 
-  Number of optional parameters: 0/1/4, indicating that no parameters, one parameter and four parameters. One parameter is the default load weight parameter, and four parameters are filled respectively indicating load, centerX, centerY, and centerZ.
+  Number of optional parameters: 0/1/4, indicating that no parameters, one parameter and four parameters. One parameter refers to the load weight by default, and four parameters refer to the indicating load, centerX, centerY, and centerZ respectively.
 
 | Parameter |  Type  | Description                                                  |
 | --------- | :----: | ------------------------------------------------------------ |
@@ -145,7 +147,7 @@ The commands related to robot setting are as follows:
 | centerY   | double | Eccentric distance in Y direction, range: -500mm~500mm       |
 | centerZ   | double | Eccentric distance in Z direction, range: -500mm~500mm       |
 
-- Return: ErrorID, if the command operation is normal, the ErrorID returns 0. If the command operation fails, return an error code. Refer to Chapter 6.
+- Return: ErrorID,{},EnableRobot();
 
 - Supporting port: 29999
 
@@ -156,13 +158,16 @@ The commands related to robot setting are as follows:
 
 
 
+
 ## 3.2 DisableRobot
 
 - Function: DisableRobot()
 
 - Description: disable the robot
 
-- Parameters: None
+- Parameters: null
+
+- Return: ErrorID,{},DisableRobot();
 
 - Supporting port: 29999
 
@@ -177,9 +182,11 @@ The commands related to robot setting are as follows:
 
 - Function: ClearError()
 
-- Description: clear the error of the robot. After clearing the alarm, the user can judge whether the robot is still in the alarm state according to the RobotMode. For the alarm that cannot be cleared, restart the control cabinet. (Refer to GetErrorID)
+- Description: clear the error of the robot. After clearing the alarm, the user can judge whether the robot is still in the alarm state according to RobotMode. For the alarm that cannot be cleared, restart the control cabinet. (Refer to GetErrorID)
 
 - Parameters: null
+
+- Return: ErrorID,{},ClearError();
 
 - Supporting port: 29999
 
@@ -197,6 +204,8 @@ The commands related to robot setting are as follows:
 - Description: stop the robot
 
 - Parameters: None
+
+- Return: ErrorID,{},ResetRobot();
 
 - Supporting port: 29999
 
@@ -219,6 +228,8 @@ The commands related to robot setting are as follows:
   | --------- | ---- | ------------------------------------------------- |
   | ratio     | int  | speed ratio, range: 0~100, exclusive of 0 and 100 |
 
+- Return: ErrorID,{},SpeedFactor(ratio);
+
 - Supporting port: 29999
   
 - Example
@@ -233,15 +244,17 @@ The commands related to robot setting are as follows:
 
 - Function: User(index)
 
-- Description: select the identified user coordinate system
+- Description: select the calibrated user coordinate system
 
 - Parameters: 
 
   | Parameter | Type | Description                                              |
   | --------- | ---- | -------------------------------------------------------- |
-  | index     | int  | select the identified user coordinate system, range: 0~9 |
+  | index     | int  | select the calibrated user coordinate system, range: 0~9 |
 
-- Return: ErrorID: -1 indicates that the user coordinate index does not exist.
+- Return: 
+  
+  ErrorID,{},User(index); //ErrorID: -1 indicates that the user coordinate index does not exist.
   
 - Supporting port: 29999
   
@@ -257,15 +270,17 @@ The commands related to robot setting are as follows:
 
 - Function: Tool(index)
 
-- Description: select the identified tool coordinate system
+- Description: select the calibrated tool coordinate system
 
 - Parameters: 
 
   | Parameter | Type | Description                                              |
   | --------- | ---- | -------------------------------------------------------- |
-  | index     | int  | select the identified tool coordinate system, range: 0~9 |
+  | index     | int  | select the calibrated tool coordinate system, range: 0~9 |
 
-- ErrorID: -1 indicates that the tool coordinate index does not exist.
+- Return: 
+  
+  ErrorID,{},Tool(index); //ErrorID: -1 indicates that the tool coordinate index does not exist.
   
 - Supporting port: 29999
   
@@ -283,14 +298,14 @@ The commands related to robot setting are as follows:
 
 - Description: mode of robot. 
 
-    In order to maintain compatibility with controller version 3.5.1, the return value of  robot status has not been modified. Such as: idle, drag, running, alarm state.
+    In order to maintain compatibility with controller version 3.5.1, the return value of robot status is not modified, such as: idle, drag, running, alarm state. Brake releasing, trajectory recording, pause and jog are added.
 
-- Parameters: None
+- Parameters: null
 
 - Supporting port: 29999
 
 
-- Return:                              
+- Return value:                              
 
 | Mode | Description           | NOTE                             |
 | ---- | --------------------- | -------------------------------- |
@@ -305,6 +320,10 @@ The commands related to robot setting are as follows:
 | 9    | ROBOT_MODE_ERROR      | Alarm state                      |
 | 10   | ROBOT_MODE_PAUSE      | pause state                      |
 | 11   | ROBOT_MODE_JOG        | jogging state                    |
+
+- Return: 
+
+  ErrorID,{Value},RobotMode(); //Value is the robot mode value
 
 - Example
     ```
@@ -327,6 +346,8 @@ The commands related to robot setting are as follows:
   | weight    | double | Load weight.<br/>CR3/CR3L load range: 0~3kg;<br/>CR5/CR5D load range: 0~5kg;<br/>CR7 load range: 0~7kg;<br/>CR10 load range: 0~10kg;<br/>CR12 load range: 0~12kg;<br/>CR16 load range: 0~16kg;<br/>MG400 load range: 0~ 0.5kg;<br/>M1 Pro load range: 0~ 1.5kg; |
   | inertia   | double | load inertia kgm²                                            |
 
+- Return: ErrorID,{},PayLoad(weight,inertia); 
+
 - Supporting port: 29999
   
 - Example
@@ -335,7 +356,7 @@ The commands related to robot setting are as follows:
   PayLoad(3,0.4)
   ```
   
-  Using LoadSet is the same as calling PayLoad. PayLoad is used with the LoadSwitch directive
+  TCP commands support LoadSet of Lua. Using LoadSet is the same as calling PayLoad. LoadSet should be used with the LoadSwitch command
 
 
 
@@ -349,8 +370,10 @@ The commands related to robot setting are as follows:
 
   | Parameter | Type | Description                                                  |
   | --------- | ---- | ------------------------------------------------------------ |
-  | index     | int  | digital output index, range: 1 to 16 or 100 to 1000. The value ranges from 100 to 1000 when the hardware of the EXPANDED I/O module is supported |
-  | status    | bool | status of the digital output port. 1: High level; 0: Low level |
+  | index     | int  | digital output index, range: 1 to 16 or 100 to 1000. The value ranges from 100 to 1000 with the support of the hardware of the extended I/O module|
+  | status    | int | status of the digital output port. 1: High level; 0: Low level |
+
+- Return: ErrorID,{},DO(index,status);   
 
 - Supporting port: 29999
   
@@ -366,14 +389,16 @@ The commands related to robot setting are as follows:
 
 - Function: DOExecute(index,status)
 
-- Description: set the status of digital output port (immediate command)  
+- Description: set the status of digital output port (immediate command).  
 
 - Parameters: 
 
   | Parameter | Type | Description                                                  |
   | --------- | ---- | ------------------------------------------------------------ |
-  | index     | int  | digital output index, range: 1 to 16 or 100 to 1000. The value ranges from 100 to 1000 when the hardware of the EXPANDED I/O module is supported |
+  | index     | int  | digital output index, range: 1 to 16 or 100 to 1000. The value ranges from 100 to 1000 with the support of the hardware of the EXPANDED I/O module |
   | status    | boo  | status of the digital output port. 1: High level; 0: Low level |
+
+- Return: ErrorID,{},DOExecute(index,status);
 
 - Supporting port: 29999
   
@@ -382,21 +407,23 @@ The commands related to robot setting are as follows:
   ```
   DOExecute(1,1)
   ```
-
+- **This command can be only used for CR robots.**
 
 
 ## 3.12 ToolDO
 
 - Function: ToolDO(index,status)
 
-- Description: Set terminal digital output port state (queue instruction)
+- Description: Set terminal digital output port state (queue command). 
 
 - Parameters: 
 
   | Parameter | Type | Description                                                  |
   | --------- | ---- | ------------------------------------------------------------ |
-  | index     | int  | digital output index, range: 1 to 16 or 100 to 1000. The value ranges from 100 to 1000 when the hardware of the EXPANDED I/O module is supported |
+  | index     | int  | digital output index, range: 1 to 16 or 100 to 1000. The value ranges from 100 to 1000 with the support of the hardware of the extended I/O module |
   | status    | bool | status of digital output port. 1: high level, 0: low level   |
+
+- Return: ErrorID,{},ToolDO(index,status);  
 
 - Supporting port: 29999
   
@@ -405,21 +432,23 @@ The commands related to robot setting are as follows:
   ```
   ToolDO(1,1)
   ```
-
+- **This command can be only used for CR robots.**
 
 
 ## 3.13 ToolDOExecute
 
 - Function: ToolDOExecute(index,status)
 
-- Description: Set terminal digital output port state (immediate instruction)
+- Description: Set terminal digital output port state (immediate command)
 
 - Parameters: 
 
   | Parameter | Type | Description                                                  |
   | --------- | ---- | ------------------------------------------------------------ |
   | index     | int  | digital output index, range: 1 or 2                          |
-  | 0/1       | bool | status of the digital output port. 1: high level; 0: low level |
+  | status       | int | status of the digital output port. 1: high level; 0: low level |
+
+- Return: ErrorID,{},ToolDOExecute(index,status);  
 
 - Supporting port: 29999
   
@@ -428,7 +457,7 @@ The commands related to robot setting are as follows:
   ```
   ToolDOExecute(1,1)
   ```
-
+- **This command can be only used for CR robots.**
 
 
 ## 3.14 AO
@@ -444,6 +473,8 @@ The commands related to robot setting are as follows:
   | index     | int    | analog output index, range: 1 or 2          |
   | value     | double | voltage of corresponding index, range: 0~10 |
 
+- Return: ErrorID,{},AO(index,value);  
+
 - Supporting port: 29999
   
 - Example
@@ -451,7 +482,7 @@ The commands related to robot setting are as follows:
   ```
   AO(1,2)
   ```
-
+- **This command can be only used for CR robots.**
 
 
 ## 3.15 AOExecute
@@ -467,6 +498,8 @@ The commands related to robot setting are as follows:
   | index     | int    | analog output index, range: 1 or 2          |
   | value     | double | voltage of corresponding index, range: 0~10 |
 
+- Return: ErrorID,{},AOExecute(index,value);
+
 - Supporting port: 29999
   
 - Example
@@ -474,20 +507,22 @@ The commands related to robot setting are as follows:
   ```
   AOExecute(1,2)
   ```
-
+- **This command can be only used for CR robots.**
 
 
 ## 3.16 AccJ
 
 - Function: AccJ(R)
 
-- Description: set the joint acceleration rate. This command is valid only when the motion mode is MovJ, MovJIO, MovJR,  JointMovJ
+- Description: set the joint acceleration rate. This command is valid only when the motion mode is MovJ, MovJIO, MovJR, JointMovJ
 
 - Parameters: 
 
   | Parameter | Type | Description                           |
   | --------- | ---- | ------------------------------------- |
   | R         | int  | joint acceleration rate, range: 1~100 |
+
+- Return: ErrorID,{},AccJ(R);
 
 - Supporting port: 29999
   
@@ -511,6 +546,8 @@ The commands related to robot setting are as follows:
   | --------- | ---- | ----------------------------------------- |
   | R         | int  | Cartesian acceleration rate, range: 1~100 |
 
+- Return: ErrorID,{},AccL(R);
+
 - Supporting port: 29999
   
 - Example
@@ -525,13 +562,15 @@ The commands related to robot setting are as follows:
 
 - Function: SpeedJ(R)
 
-- Description: set the joint velocity rate. This command is valid only when the motion mode is MovJ, MovJIO, MovJR,  JointMovJ
+- Description: set the joint velocity rate. This command is valid only when the motion mode is MovJ, MovJIO, MovJR, JointMovJ
 
 - Parameters: 
 
   | Parameter | Type | Description                       |
   | --------- | ---- | --------------------------------- |
   | R         | int  | joint velocity rate, range: 1~100 |
+
+- Return: ErrorID,{},SpeedJ(R);
 
 - Supporting port: 29999
   
@@ -555,6 +594,9 @@ The commands related to robot setting are as follows:
   | --------- | ---- | ------------------------------------- |
   | R         | int  | Cartesian velocity rate, range: 1~100 |
 
+
+- Return: ErrorID,{},SpeedL(R);
+
 - Supporting port: 29999
   
 - Example
@@ -576,6 +618,8 @@ The commands related to robot setting are as follows:
   | Parameter | Type | Description                      |
   | --------- | ---- | -------------------------------- |
   | Index     | int  | arc parameters index, range: 0~9 |
+
+- Return: ErrorID,{},Arch(Index);
 
 - Supporting port: 29999
   
@@ -599,6 +643,8 @@ The commands related to robot setting are as follows:
   | --------- | ---- | ---------------------------------- |
   | R         | int  | continuous path rate, range: 1~100 |
 
+- Return: ErrorID,{},CP(R);
+
 - Supporting port: 29999
   
 - Example
@@ -609,37 +655,15 @@ The commands related to robot setting are as follows:
 
 
 
-## 3.22 LimZ
-
-- Function: LimZ(zValue)
-- Description: set the maximum lifting height in Jump mode
-
-
-- Parameters: 
-
-  | Parameter | Type | Description                                                  |
-  | --------- | ---- | ------------------------------------------------------------ |
-  | zValue    | int  | maximum lifting height which cannot exceed the Z-axis limiting position of the robot |
-
-- Supporting port: 29999
-  
-- Example
-  
-  ```
-  LimZ(80)
-  ```
-
-
-
 ## 3.23 SetArmOrientation
 
 - Function: SetArmOrientation(LorR,UorD,ForN,Config6)
-- Description: set the orientation of the arm
 
+- Description: set the orientation of the arm
 
 - Parameters: 
 
-  Number of optional parameters: 1 or 4. One parameter indicates that it is M1Pro model, indicating that it is right-handed. Four parameters indicate CR series parameters. If other parameters are specified, an error message is displayed.
+  Number of optional parameters: 1 or 4. One parameter refers to M1 Pro by default, indicating that it is right-handed. Four parameters refer to CR robot by default. If other parameters are specified, an error message will be displayed.
 
   | Parameter | Type | Description                                                  |
   | --------- | ---- | ------------------------------------------------------------ |
@@ -647,6 +671,9 @@ The commands related to robot setting are as follows:
   | UorD      | int  | Arm direction: up the elbow/down the elbow (1/-1)<br />1: up the elbow<br />-1: down the elbow |
   | ForN      | int  | Whether the wrist is reversed (1/-1)<br />1: wrist is not reversed<br />-1: wrist is reversed |
   | Config6   | int  | Sixth axis Angle sign<br />-1,-2...<br />-1: Axis 6 Angle is [0,-90],  Config6 is -1;<br/>-2: Axis 6 Angle is [90, 180], and so on<br/> 1,2...<br/>1: axis 6 Angle is [0,90], Config6 is 1;<br/>2: axis 6 Angle is [90180], Config6 is 2, and so on<br/> |
+
+
+- Return: ErrorID,{},SetArmOrientation(LorR,UorD,ForN,Config6);
 
 - Supporting port: 29999
   
@@ -663,23 +690,28 @@ The commands related to robot setting are as follows:
   ```
   SetArmOrientation(0)
   ```
-  
+- **This command can be only used for CR robots.**
   
   
 ## 3.24 PowerOn
 
 - Function: PowerOn()
 - Description: Power on the robot. After the robot is powered on, wait about 10 seconds before enabling it.
-- Parameters: None
+
+- Parameters: null
+
+- Return: ErrorID,{},PowerOn();
+
 - Supporting port: 29999
-
-  **Note: Once the robot is powered on, you can enable the robot after about 10 seconds.**
-
 
 - Example
     ```
   PowerOn()
   ```
+- **Note: Once the robot is powered on, you can enable the robot after about 10 seconds.**
+
+- **This command can be only used for CR robots.**
+
 
 
 
@@ -695,6 +727,7 @@ The commands related to robot setting are as follows:
   | ----------- | ------ | ----------- |
   | projectName | string | script name |
 
+- Return: ErrorID,{},RunScript(projectName);
 
 - Supporting port: 29999
   
@@ -712,7 +745,9 @@ The commands related to robot setting are as follows:
 
 - Description: stop the script
 
-- Parameters: None
+- Parameters: null
+
+- Return: ErrorID,{},StopScript();
 
 - Supporting port: 29999
 
@@ -729,7 +764,9 @@ The commands related to robot setting are as follows:
 
 - Description: pause the script
 
-- Parameters: None
+- Parameters: null
+
+- Return: ErrorID,{},PauseScript();
 
 - Supporting port: 29999
 
@@ -746,7 +783,11 @@ The commands related to robot setting are as follows:
 
 - Description: continue the script
 
-- Parameters: None
+- Parameters: null
+
+- Return: 
+
+  ErrorID,{},ContinueScript();
 
 - Supporting port: 29999
 
@@ -763,12 +804,13 @@ The commands related to robot setting are as follows:
 
 - Description: Set the state of safe skin 
 
-- Parameters：
+- Parameters: 
 
   | Parameter | Parameter | Description                                                  |
   | --------- | --------- | ------------------------------------------------------------ |
   | status    | int       | status: safe skin status, 0: Turn off safe skin; 1: Open safe skin |
 
+- Return: ErrorID,{},SetSafeSkin(status));
 
 - Supporting port: 29999
 
@@ -779,21 +821,25 @@ The commands related to robot setting are as follows:
   ```
   SetSafeSkin (1)
   ```
+- **This command can be only used for CR robots.**
 
-  
+
 
 ## 3.30 GetTraceStartPose
 
 - Function: GetTraceStartPose(traceName)
 
-- Description: get the first point of the trajectory. This instruction is supported in CR controller version.
+- Description: get the first point of the trajectory. This command is supported in CR controller version 3.5.2 and above
 
-- Parameters：
+- Parameters: 
 
   | Parameter | Parameter | Description                                   |
   | --------- | --------- | --------------------------------------------- |
   | traceName | string    | name of the trajectory file (with the suffix) |
 
+- Return: 
+
+  ErrorID,{x,y,z,a,b,c},GetTraceStartPose(traceName); //{x,y,z,a,b,c} refers to the point coordinates
 
 - Supporting port:29999  
 
@@ -802,21 +848,24 @@ The commands related to robot setting are as follows:
   ```
   GetTraceStartPose(recv_string)
   ```
-
+- **This command can be only used for CR robots.**
 
 
 ## 3.31 GetPathStartPose
 
 - Function: GetPathStartPose(traceName)
 
-- Description: get the first point in trajectory playback. This instruction is supported in CR controller version. 3.5.2 and above.
+- Description: get the first point in trajectory playback. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters：
+- Parameters: 
 
   | Parameter | Type   | Description                                   |
   | --------- | ------ | --------------------------------------------- |
   | traceName | string | name of the trajectory file (with the suffix) |
 
+- Return: 
+
+  ErrorID,{j1,j2,j3,j4,j5,j6},GetTraceStartPose(traceName);   //{j1,j2,j3,j4,j5,j6} is the coordinates of joints
 
 - Supporting port: 29999
 
@@ -825,16 +874,16 @@ The commands related to robot setting are as follows:
   ```
   GetPathStartPose(recv_string)
   ```
-
+- **This command can be only used for CR robots.**
   
 
 ## 3.32 PositiveSolution
 
 - Function: PositiveSolution(J1,J2,J3,J4,J5,J6,User,Tool)
 
-- Description: Positive solution. Given the angle of each joint of the robot, the spatial position of the end of the robot is calculated. The arm direction of the robot is required to be known by SetArmOrientation
+- Description: Positive solution. Calculate the spatial position of the end of the robot based on the given angle of each joint of the robot. The arm direction of the robot is required to be known by SetArmOrientation
 
-- Parameters：
+- Parameters: 
 
   | Parameter | Type   | Description                                  |
   | --------- | ------ | -------------------------------------------- |
@@ -847,25 +896,31 @@ The commands related to robot setting are as follows:
   | User      | int    | Select the calibrated user coordinate system |
   | Tool      | int    | Select the calibrated tool coordinate system |
 
-- Return: Spatial position
+- Return: 
+
+  ErrorID,{x,y,z,a,b,c},PositiveSolution(J1,J2,J3,J4,J5,J6,User,Tool); //{x,y,z,a,b,c} refers to the returned spatial position
 
 - Supporting port: 29999
 
 - Example
-
+Based on the given joint angles, return the spatial position of the end of the robot
   ```
   PositiveSolution(0,0,-90,0,90,0,1,1)
   ```
+  Return:
+  0,{473.000000,-141.000000,469.000000,-180.000000,-0.000000,-90.000000},PositiveSolution(0,0,-90,0,90,0,0,0);
 
-  
+- **This command can be only used for CR robots.**
 
-  ## 3.33 InverseSolution
+
+
+## 3.33 InverseSolution
 
 - Function: InverseSolution(X,Y,Z,Rx,Ry,Rz,User,Tool,isJointNear,JointNear)
 
-- Description:  The inverse solution. The position and attitude of the end of the robot are known, and the angle values of each joint of the robot are calculated.
+- Description:  Inverse solution. Calculate the angle values of each joint of the robot based on the position and attitude of the end of the robot
 
-- Parameters：
+- Parameters: 
 
   - Necessary parameters
 
@@ -887,7 +942,8 @@ The commands related to robot setting are as follows:
   | isJointNear | Whether to choose the Angle solution. If the value is 1, JointNear data is valid. If the value is 0, JointNear data is invalid. The algorithm selects solutions according to the current Angle. The default value is 0. | int    |
   | JointNear   | Select  the Angle values of six joints                       | string |
 
-- Return：angle values of each joint
+- Return: 
+  ErrorID,{J1,J2,J3,J4,J5,J6},InverseSolution(X,Y,Z,Rx,Ry,Rz,User,Tool,isJointNear,JointNear); //{J1,J2,J3,J4,J5,J6} is the angle values of each joint. isJointNear,JointNear will be returned if there are values delivered
 
 - Supporting port: 29999
 
@@ -911,25 +967,26 @@ The commands related to robot setting are as follows:
 
   return: 0,{0,0,-90,0,90,0},InverseSolution(0,-247,1050,-90,0,180,0,0,1,{0,0,-90,0,90,0});
 
-  
+- **This command can be only used for CR robots.**  
 
 
-  ## 3.34 SetCollisionLevel
+## 3.34 SetCollisionLevel
 
-  - Function: SetCollisionLevel(level)
+- Function: SetCollisionLevel(level)
 
-  - Description: set the collision level. 
+- Description: set the collision level. 
 
-  - Parameters
+- Parameters: 
 
     | Parameters | Type | Description                                                  |
     | ---------- | ---- | ------------------------------------------------------------ |
     | level      | int  | level: collision level<br /> 0: switch off collision detection<br /> 1~5: more sensitive with higher level |
 
+- Return: ErrorID,{},SetCollisionLevel(level);
+  
+- Supporting port: 29999
 
-  - Supporting port: 29999
-
-  - Example
+- Example
 
     ```
     SetCollisionLevel(1)
@@ -937,31 +994,35 @@ The commands related to robot setting are as follows:
 
     
 
-  ## 3.35 HandleTrajPoints
+## 3.35 HandleTrajPoints
 
-  - Function: HandleTrajPoints(traceName)
+- Function: HandleTrajPoints(traceName)
 
-  - Description: Preprocessing of trajectory files. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: Preprocessing of trajectory files. This command is supported in CR controller version 3.5.2 and above.
 
-  - Parameters：
+- Parameters: 
 
     | Parameters | Type   | Description                                   |
     | ---------- | ------ | --------------------------------------------- |
     | traceName  | string | name of the trajectory file (with the suffix) |
 
-  - Return：ErrorID
+- Return: ErrorID,{},HandleTrajPoints(traceName);   
 
-  - Supporting port: 29999
+- Note:
+  As the trajectory preprocessing results vary according to the size of the file, and the processing time of algorithms will be different. If the user sends this command without parameters, it refers to querying the result of the current command. 
+  Return: -3 indicates that the file content is incorrect; -2 indicates that the file does not exist; -1 indicates that the preprocessing is not completed; 0 indicates that preprocessing is completed with no errors; and a value greater than 0 indicates that the point corresponding to the current result is fault.
+  
+- Supporting port: 29999
 
-  - Example
+- Example
 
-    Recv_string is delivered for preprocessing, and the preprocessing result is queried at a certain period.
+   Deliver Recv_string for preprocessing, and query the preprocessing result at a certain period.
 
     ```
     HandleTrajPoints(recv_string)
     HandleTrajPoints()
     ```
-
+- **This command can be only used for CR robots.**
 
 
 ## 3.36 GetSixForceData
@@ -970,9 +1031,11 @@ The commands related to robot setting are as follows:
 
 - Description: get six-axis force data
 
-- Parameters: None
+- Parameters: null
 
-- Return: six-axis force data
+- Return: 
+
+  ErrorID,{Fx,Fy,Fz,Mx,My,Mz},GetSixForceData(); //{Fx,Fy,Fz,Mx,My,Mz} represents the original value of six-axis force.
 
 - Supporting port: 29999
 
@@ -981,7 +1044,9 @@ The commands related to robot setting are as follows:
   ```
   GetSixForceData()
   ```
+  Return: 0,{0.0,0.0,0.0,0.0,0.0,0.0},GetSixForceData();
 
+- **This command can be only used for CR robots.**
 
 
 ## 3.37 GetAngle
@@ -990,9 +1055,11 @@ The commands related to robot setting are as follows:
 
 - Description: get the current pose of the robot under the Joint coordinate system
 
-- Parameters: None
+- Parameters: null
 
-- Return: joint coordinate of the current pose
+- Return: 
+
+  ErrorID,{J1,J2,J3,J4,J5,J6},GetAngle(); //{J1,J2,J3,J4,J5,J6} refers to the joint coordinate of the current pose
 
 - Supporting port: 29999
 
@@ -1001,29 +1068,37 @@ The commands related to robot setting are as follows:
   ```
   GetAngle()
   ```
-
+  Return: 0,{0.0,0.0,90.0,0.0,-90.0,0.0},GetAngle();
   
 
 ## 3.38 GetPose
 
-- Function: GetPose()
+- Function: GetPose(user,tool)
 
 - Description: get the current pose of the robot under the Cartesian coordinate system
 
   If you have set the User or Tool coordinate system, the current pose is under the current User or Tool coordinate system
 
-- Parameters：None
+- Parameters: 
+    | Parameters | Type   | Description                                   |
+    | ---------- | ------ | --------------------------------------------- |
+    | user  | int | index of User coordinate system |
+    | tool  | int | index of Tool coordinate system |
 
-- Return: pose of the robot in the joint coordinate system
+- Return: 
+
+    ErrorID,{X,Y,Z,Rx,Ry,Rz},GetPose(); //{X,Y,Z,Rx,Ry,Rz} represents the coordinates of the current pose under the Cartesian coordinate system
 
 - Supporting port: 29999
 
 - Example
 
+  Return the default parameter to the upper computer. Select the pose of the coordinate system. Pass the index values of user and tool, and return the pose under the specified coordinate system
+
   ```
   GetPose()
   ```
-
+  Return: 0,{-473.0,-141.0,469.0,-180.0,0.0,90.0},GetPose();
   
 
 ## 3.39 EmergencyStop
@@ -1032,7 +1107,9 @@ The commands related to robot setting are as follows:
 
 - Description: Emergency Stop
 
-- Parameters：None
+- Parameters: null
+
+- Return: ErrorID,{},EmergencyStop(); 
 
 - Supporting port: 29999
 
@@ -1049,9 +1126,9 @@ The commands related to robot setting are as follows:
 
 - Function: ModbusCreate(ip,port,slave_id,isRTU)
 
-- Description: create Modbus master station, and establish connection with the slave station. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: create Modbus master station, and establish connection with the slave station. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters：
+- Parameters: 
 
   | Parameters | Type   | Description                                                  |
   | ---------- | ------ | ------------------------------------------------------------ |
@@ -1061,11 +1138,13 @@ The commands related to robot setting are as follows:
   | isRTU      | int    | This parameter is optional. The value range is 0/1.<br/>If the value is null or 0, establish modbusTCP communication.<br/>If it is 1, establish modbusRTU communication. |
 
 
-- Return: ErrorID, {index}
+- Return: 
+  
+  ErrorID,{index},ModbusCreate(ip,port,slave_id,isRTU);  
 
   ErrorID: 0 indicates that the Modbus master station is created successfully. -1 indicates that the Modbus master station fails to be created. For other values, refer to the error code description
 
-  index: master station index. Supports a maximum of 5 devices. The value ranges from 0 to 4.
+  index: master station index, which supports a maximum of 5 devices, ranging from 0 to 4.
 
 - Supporting port: 29999
 
@@ -1074,7 +1153,7 @@ The commands related to robot setting are as follows:
   Establish RTU communication master station (60000 terminal transparent port)
 
   ```
-  ModbusCreate(127.0.0.1,60000,1,true)
+  ModbusCreate(127.0.0.1,60000,1,1)
   ```
 
   
@@ -1083,14 +1162,17 @@ The commands related to robot setting are as follows:
 
 - Function: ModbusClose(index)
 
-- Description: disconnect with Modbus slave station. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: disconnect with Modbus slave station. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters：
+- Parameters: 
 
   | Parameters | Type   | Description    |
   | ---------- | ------ | -------------- |
   | index      | string | Internal index |
 
+- Return: 
+  
+  ErrorID,{},ModbusClose(index);     
 
 - Supporting port: 29999
 
@@ -1106,9 +1188,9 @@ The commands related to robot setting are as follows:
 
 - Function: GetInBits(index,addr,count)
 
-- Description: Read discrete input data. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: Read discrete input data. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters：
+- Parameters: 
 
   | Parameters | Type | Description                                  |
   | ---------- | ---- | -------------------------------------------- |
@@ -1117,7 +1199,8 @@ The commands related to robot setting are as follows:
   | count      | int  | The value ranges from 1 to 16                |
 
 
-- Return: get results by bit
+- Return: 
+  ErrorID,{value1,value2,...,valuen},GetInBits(index,addr,count);    //table，it gets results {value1,value2...,valuen} by bit
 
 - Supporting port: 29999
 
@@ -1137,9 +1220,9 @@ The commands related to robot setting are as follows:
 
 - Function: GetInRegs(index,addr,count,valType)
 
-- Description: read the input register value. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: read the input register value. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type   | Description                                                  |
   | ---------- | ------ | ------------------------------------------------------------ |
@@ -1149,7 +1232,9 @@ The commands related to robot setting are as follows:
   | valType    | string | Optional parameters<br />U16: read 16-bit unsigned integer ( two bytes, occupy one register)<br />U32: read 32-bit unsigned integer (four bytes, occupy two registers)<br />F32: read 32-bit single-precision floating-point number (four bytes, occupy two registers)<br />F64: read 64-bit double-precision floating-point number (eight bytes, occupy four registers) |
 
 
-- Return: Returns by variable type {value1,value2...,valuen}
+- Return: 
+
+  ErrorID,{value1,value2,...,valuen},GetInRegs(index,addr,count,valType); //For ErrorID, 0 means normal, and -1 means failing to be obtained; For table, it returns {value1,value2...,valuen} by variable type 
 
 - Supporting port: 29999
 
@@ -1169,9 +1254,9 @@ The commands related to robot setting are as follows:
 
 - Function: GetCoils(index,addr,count)
 
-- Description: read the coil register. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: read the coil register. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type | Description                                  |
   | ---------- | ---- | -------------------------------------------- |
@@ -1180,7 +1265,8 @@ The commands related to robot setting are as follows:
   | count      | int  | The value ranges from 1 to 16                |
 
 
-- Return: Returns by variable type {value1,value2...,valuen}
+- Return: 
+  ErrorID,{value1,value2,…,valuen},GetCoils(index,addr,count); //For ErrorID, 0 means normal, and -1 means failing to be obtained; For table, it returns {value1,value2...,valuen} by variable type 
 
 - Supporting port: 29999 
 
@@ -1200,9 +1286,9 @@ The commands related to robot setting are as follows:
 
 - Function: SetCoils(index,addr,count,valTab)
 
-- Description: write the coil register. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: write the coil register. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type   | Description                                  |
   | ---------- | ------ | -------------------------------------------- |
@@ -1212,7 +1298,9 @@ The commands related to robot setting are as follows:
   | valTab     | string | address of the coils                         |
 
 
-- Return: ErrorID, 0 indicates normal, and -1 indicates that the configuration fails.
+- Return
+
+  ErrorID,{},SetCoils(index,addr,count,valTab); //For ErrorID, 0 means normal, and -1 means failing to be set 
 
 - Supporting port: 29999
 
@@ -1232,9 +1320,9 @@ The commands related to robot setting are as follows:
 
 - Function: GetHoldRegs(index,*addr*, *count*,valType)
 
-- Description: read the holding register. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: read the holding register. This command is supported in CR controller version 3.5.2 and above.
 
-- Example
+- Parameters: 
 
   | Parameters | Type   | Description                                                  |
   | ---------- | ------ | ------------------------------------------------------------ |
@@ -1244,7 +1332,8 @@ The commands related to robot setting are as follows:
   | valType    | string | U16: read 16-bit unsigned integer ( two bytes, occupy one register)<br />U32: read 32-bit unsigned integer (four bytes, occupy two registers)<br />F32: read 32-bit single-precision floating-point number (four bytes, occupy two registers)<br />F64: read 64-bit double-precision floating-point number (eight bytes, occupy four registers) |
 
 
-- Return: Returns by variable type {value1,value2...,valuen}
+- Return: 
+  ErrorID,{value1,value2,…,valuen},GetHoldRegs(index,addr, count,valType); //For ErrorID, 0 means normal, and -1 means failing to be obtained; For table, it returns {value1,value2...,valuen} by variable type 
 
 - Supporting port: 29999
 
@@ -1266,9 +1355,9 @@ The commands related to robot setting are as follows:
 
 - Function: SetHoldRegs(index,*addr*, *count*,*valTab*,valType)
 
-- Description: write the holding register. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: write the holding register. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type   | Description                                                  |
   | ---------- | ------ | ------------------------------------------------------------ |
@@ -1279,7 +1368,8 @@ The commands related to robot setting are as follows:
   | valType    | string | U16: read 16-bit unsigned integer ( two bytes, occupy one register)<br />U32: read 32-bit unsigned integer (four bytes, occupy two registers)<br />F32: read 32-bit single-precision floating-point number (four bytes, occupy two registers)<br />F64: read 64-bit double-precision floating-point number (eight bytes, occupy four registers) |
 
 
-- Return: ErrorID, 0 indicates normal, and -1 indicates that the configuration fails.
+- Return: 
+  ErrorID,{},SetHoldRegs(index,addr, count,valTab,valType);//For ErrorID, 0 means normal, and -1 means failing to be set 
 
 - Supporting port: 29999
 
@@ -1300,12 +1390,15 @@ The commands related to robot setting are as follows:
 ## 3.48 GetErrorID
 
 - Function: GetErrorID()
-- Description: Get the robot error code.  This instruction is supported in CR controller version 3.5.2 and above.
-- Parameters：None
-- Supporting port: 29999
-- Return: controller and algorithm alarm information, collision detection value is -2, electronic skin collision detection value is -3;
-  The last six represent the alarm information of six servos respectively.
 
+- Description: Get the robot error code.  This command is supported in CR controller version 3.5.2 and above.
+
+- Parameters: null
+
+- Supporting port: 29999
+
+- Return: 
+  ErrorID,{[[id,…,id], [id], [id], [id], [id], [id], [id]]},GetErrorID();//[id,..., id] is the alarm information of the controller and algorithm, where the collision detection value is -2, the safe skin collision detection value is -3. The last six [id] represent the alarm information of six servos respectively.
 
 - Example
 
@@ -1317,7 +1410,7 @@ The commands related to robot setting are as follows:
 
    0,{[[-2],[],[],[],[],[]]},GetErrorId();
 
-  
+- Note: For error code description, see alarm_controller.json and alarm_servo.json
 
 
 ## 3.49 DI
@@ -1326,14 +1419,15 @@ The commands related to robot setting are as follows:
 
 - Description: get the status of the digital input port.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type | Description                                                  |
   | ---------- | ---- | ------------------------------------------------------------ |
   | index      | int  | digital input index, range: 1~32  or 100 - 1000. The value range is 100-1000 only when you configure the extended I/O module |
 
 
-- Return: the current index value status. The value range is 0/1.
+- Return: 
+  ErrorID,{value},DI(index);//value: the current index status value. The value range is 0/1.
 
 - Supporting port: 29999
 
@@ -1353,16 +1447,17 @@ The commands related to robot setting are as follows:
 
 - Function: ToolDI(index)
 
-- Description: gets terminal digital quantity input port status.
+- Description: get the status of tool digital input port.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type | Description                        |
   | ---------- | ---- | ---------------------------------- |
   | index      | int  | digital input index, range: 1 or 2 |
 
 
-- Return: status input port corresponding to the index, range: 1 or 0
+- Return: 
+  ErrorID,{value},ToolDI(index); //value: port status of corresponding index, range: 1 or 0
 
 - Supporting port: 29999
 
@@ -1371,8 +1466,11 @@ The commands related to robot setting are as follows:
   ```
   ToolDI(2)
   ```
-
+  Return: The tool digital input port 2 is high level.
   
+  0,{1},ToolDI(2);
+
+
 
 ## 3.51 AI
 
@@ -1380,14 +1478,16 @@ The commands related to robot setting are as follows:
 
 - Description: get the voltage of analog input port of controller (immediate command).
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type | Description                        |
   | ---------- | ---- | ---------------------------------- |
   | index      | int  | index of controller, range: 1 or 2 |
 
 
-- Return: voltage of corresponding index
+- Return:
+
+  ErrorID,{value},AI(index); //value: voltage of corresponding index
 
 - Supporting port: 29999
 
@@ -1398,8 +1498,13 @@ The commands related to robot setting are as follows:
   ```
   AI(2)
   ```
-
+  Return: The voltage of analog input port 2 is 3.5V.
   
+  0,{3.5},AI(2);
+  
+- **This command can be only used for CR robots.**
+
+
 
 ## 3.52 ToolAI
 
@@ -1407,13 +1512,14 @@ The commands related to robot setting are as follows:
 
 - Description: get the voltage of terminal analog input  (immediate command).
 
+- Parameters:
+
   | Parameters | Type | Description                                   |
   | ---------- | ---- | --------------------------------------------- |
   | index      | int  | index of terminal analog input, range: 1 or 2 |
 
-
-
-- Return: voltage of corresponding index
+- Return: 
+  ErrorID,{value},ToolAI(index); //value: voltage of corresponding index
 
 - Supporting port: 29999
 
@@ -1427,6 +1533,7 @@ The commands related to robot setting are as follows:
 
   0,{1.5},ToolAI(1);
 
+- **This command can be only used for CR robots.**
 
 
 ## 3.53 DIGroup
@@ -1435,7 +1542,7 @@ The commands related to robot setting are as follows:
 
 - Description: get the state of a group of digital input ports
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type | Description                                                  |
   | ---------- | ---- | ------------------------------------------------------------ |
@@ -1444,7 +1551,9 @@ The commands related to robot setting are as follows:
   | indexn     | int  | index of digita input port, range: 1~32  or 100 - 1000. The value range is 100-1000 only when you configure the extended I/O module |
 
 
-- Return: the current voltage value from index1 to Indexn
+- Return: 
+  
+  ErrorID,{value1,value2,...,valuen},DIGroup(index1,index2,...,indexn); //value1...valuen: current voltage from index1 to Indexn
 
 - Supporting port: 29999
 
@@ -1454,9 +1563,12 @@ The commands related to robot setting are as follows:
   DIGroup(4,6,2,7)
   ```
 
-  Gets the level of input ports 4, 6, 2, 7
-
+  Return: The obtained level of input ports 4, 6, 2, 7 is 1, 0, 1, 1 respectively:
   
+  0,{1,0,1,1},DIGroup(4,6,2,7);
+
+- **This command can be only used for CR robots.**
+
 
 ## 3.54 DOGroup
 
@@ -1476,34 +1588,39 @@ The commands related to robot setting are as follows:
   | indexn     | int  | index of digita output port, range: 1~16  or 100 - 1000.   |
   | valuen     | int  | the status of the digital output port. The value is 0 or 1 |
 
+- Return: 
+
+  ErrorID,{},DOGroup(index1,value1,index2,value2,...,indexn,valuen);   
 
 - Supporting port: 29999
 
 - Example
 
-  Set output ports 4, 6, 2, and 7 to 1, 0, 1, and 0 respectively
+  Set output ports 4, 6, 2, and 7 to 1, 0, 1 and 0 respectively
 
   ```
   DOGroup(4,1,6,0,2,1,7,0)
   ```
+  Return: 0,{},DOGroup(4,1,6,0,2,1,7,0);
 
-  
+- **This command can be only used for CR robots.**
 
 
 ## 3.55 BrakeControl
 
 - Function: BrakeControl(axisID,value)     
 
-- Description: Control brake. The control of the brake should be carried out under the condition that the robot is enabled. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: Control brake. The control of the brake should be carried out under the condition that the robot is enabled, otherwise the robot will return -1 by error. This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type | Description                                                |
   | ---------- | ---- | ---------------------------------------------------------- |
   | axisID     | int  | ID of the joint axis                                       |
-  | value      | int  | state of brake. 0: disables the brake. 1: enable the brake |
+  | value      | int  | state of brake. 0: disable the brake. 1: enable the brake |
 
-- Return: ErrorID, the control of locking brake should be carried out under the condition that the robot is enabled, otherwise the robot will return -1 by error.
+- Return: 
+  ErrorID,{},BrakeControl(axisID,value);
 
 - Supporting port: 29999
 
@@ -1514,16 +1631,20 @@ The commands related to robot setting are as follows:
   ```
   BrakeControl(1,1)
   ```
+  Return: 0,{},BrakeControl(1,1);
 
-  
+- **This command can be only used for CR robots.**
+
 
 ## 3.56 StartDrag
 
 - Function: StartDrag()
 
-- Description: Enter drag (in error state, can not enter drag). This instruction is supported in CR controller version 3.5.2 and above.
+- Description: Enter drag mode(in error state, can not enter drag mode). This instruction is supported in CR controller version 3.5.2 and above.
 
-- Parameters: None
+- Parameters: null
+
+- Return: ErrorID,{},StartDrag(); 
 
 - Supporting port: 29999
 
@@ -1532,50 +1653,54 @@ The commands related to robot setting are as follows:
   ```
   StartDrag()
   ```
-
+- **This command can be only used for CR robots.**
   
 
 ## 3.57 StopDrag
 
-- Description: Stop Drag. This instruction is supported in CR controller version 3.5.2 and above.
+- Description: Stop Drag mode. This command is supported in CR controller version 3.5.2 and above.
 
 - Function: StopDrag()
 
-- Parameters: None
+- Parameters: null
 
 - Supporting port: 29999
+
+- Return: ErrorID,{},StopDrag();  
 
 - Example
 
   ```
   StopDrag()
   ```
-
+- **This command can be only used for CR robots.**
   
 
 ## 3.58 SetCollideDrag
 
 - Function: SetCollideDrag(status)
 
-- Description: Set whether drag is forced to enter (can enter drag even in error state). This instruction is supported in CR controller version 3.5.2 and above.
+- Description: Set whether drag is forced to enter (can enter drag even in error state). This command is supported in CR controller version 3.5.2 and above.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type | Description                                                  |
   | ---------- | ---- | ------------------------------------------------------------ |
   | status     | int  | status: force drag switch state, 0: disables the brake. 1: enable the brake |
 
 
+- Return: ErrorID,{},SetCollideDrag(status);  
+
 - Supporting port: 29999
 
 - Example
 
-  Force entry drag.
+  Forcibly entry drag mode.
 
   ```
   SetCollideDrag(0)
   ```
-
+- **This command can be only used for CR robots.**
   
 
 ## 3.59 SetTerminalKeys
@@ -1590,6 +1715,8 @@ The commands related to robot setting are as follows:
   | ---------- | ---- | ------------------------------------------------ |
   | status     | int  | status of terminal button. 0: disable, 1: enable |
 
+- Return: ErrorID,{},SetTerminalKeys(status); 
+
 
 - Supporting port: 29999
 
@@ -1600,7 +1727,7 @@ The commands related to robot setting are as follows:
   ```
   SetTerminalKeys(0)
   ```
-
+- **This command can be only used for CR robots.**
 
 
 ## 3.60 SetTerminal485
@@ -1609,7 +1736,7 @@ The commands related to robot setting are as follows:
 
 - Description: set the terminal 485 parameter. This command is supported only in certain versions.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type   | Description                                       |
   | ---------- | ------ | ------------------------------------------------- |
@@ -1619,7 +1746,7 @@ The commands related to robot setting are as follows:
   | stopBit    | int    | stopBit: stop bit, currently fixed to 1           |
 
 
-- 
+- Return: ErrorID,{},SetTerminal485(status); 
 
 - Example
 
@@ -1629,7 +1756,9 @@ The commands related to robot setting are as follows:
   SetTerminal485(115200, 8, N, 1)
   ```
 
+- - **This command can be only used for CR robots.**
   
+
 
 ## 3.62 GetTerminal485
 
@@ -1639,7 +1768,7 @@ The commands related to robot setting are as follows:
 
 - Parameters: None
 
-- Return: {baud rate, data bit, parity bit, stop bit}
+- Return: ErrorID,{baudRate, dataLen, parityBit, stopBit},GetPose();     //{baudRate, dataLen, parityBit, stopBit} represents baud rate, data bit, parity check bit and stop bit respectively.
 
 - Supporting port: 29999
 
@@ -1648,8 +1777,10 @@ The commands related to robot setting are as follows:
   ```
   GetTerminal485()
   ```
-
+  Return: 0,{115200, 8, N, 1},GetTerminal485();
   
+- **This command can be only used for CR robots.**
+
 
 
 ## 3.63 LoadSwitch
@@ -1658,21 +1789,26 @@ The commands related to robot setting are as follows:
 
 - Description: set the load setting state.
 
-- Parameters
+- Parameters: 
 
   | Parameters | Type | Description                                                  |
   | ---------- | ---- | ------------------------------------------------------------ |
   | status     | int  | status: set the load setting state, 0: off; 1: on. Enabling load Settings increases collision sensitivity |
 
+Return: ErrorID,{},LoadSwitch(status); 
+
 - Supporting port: 29999
 
 - Example
+  
+  Start load setting.
 
   ```
   LoadSwitch(1) 
   ```
 
-   
+- **This command can be only used for CR robots.**
+  
 
 
 # 4. Communication Protocol—Real- time Feedback Port
@@ -1711,7 +1847,7 @@ The commands related to robot setting are as follows:
 |       QActual        |     double     |        6         |      48       |     0432 ~ 0479     |                    Actual joint positions                    | CR\MG              |
 |       QDActual       |     double     |        6         |      48       |     0480 ~ 0527     |                   Actual joint velocities                    | CR\MG              |
 |       IActual        |     double     |        6         |      48       |     0528 ~ 0575     |                    Actual joint currents                     | CR\MG              |
-|    ActualTCPForce    |     double     |        6         |      48       |     0576 ~ 0623     |        CP sensor value (calculated by six-axis force)        | CR\MG              |
+|    ActualTCPForce    |     double     |        6         |      48       |     0576 ~ 0623     |        TCP sensor value (calculated by six-axis force)        | CR\MG              |
 |   ToolVectorActual   |     double     |        6         |      48       |     0624 ~ 0671     | Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG              |
 |    TCPSpeedActual    |     double     |        6         |      48       |     0672 ~ 0719     |   Actual speed of the tool given in Cartesian coordinates    | CR\MG              |
 |       TCPForce       |     double     |        6         |      48       |     0720 ~ 0767     |        TCP force value (calculated by joint current）        | CR\MG              |
@@ -1762,7 +1898,7 @@ The commands related to robot setting are as follows:
 |     Reserve3[24]     |      char      |        1         |      24       |     1416 ~ 1440     |                           Reserved                           | CR\MG\M1Pro        |
 |        TOTAL         |                |                  |     1440      |                     |                       1440byte package                       |                    |
 
-Robot Mode returns the mode of robo as follows:                          
+Robot Mode returns the mode of robot as follows:                          
 
 | Mode | Description           | Note                             |
 | ---- | --------------------- | -------------------------------- |
@@ -1830,7 +1966,11 @@ Robot Mode returns the mode of robo as follows:
   | 16        | CR16    |
   | 1         | MG400   |
   | 2         | M1Pro   |
-
+  | 101        | Nova 2    |
+  | 103        | Nova 5    |
+  | 113        | CR3V2    |
+  | 115         | CR5V2   |
+  | 120         | CR10V2   |
   
 
 # 5. Communication Protocol—motion port
@@ -1871,7 +2011,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
 - Description: point to point movement, the target point is Cartesian point
 
-- Parameter
+- Parameters: 
 
   | Parameter | Type   | Description                  |
   | --------- | ------ | ---------------------------- |
@@ -1882,10 +2022,12 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   | Ry        | double | Ry-axis coordinates, unit: ° |
   | Rz        | double | Rz-axis coordinates, unit: ° |
 
-  User, Tool, SpeedJ, AccJ are optional setting parameters, indicate setting user coordinate system, tool coordinate system, joint velocity ratio and acceleration ratio values respectively.
+  User, Tool, SpeedJ, AccJ are optional parameters, indicate setting user coordinate system, tool coordinate system, joint velocity ratio and acceleration ratio values respectively.
   The value has the same meaning as SpeedJ and AccJ setting by port 29999.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
+
+- Return: ErrorID,{},MovJ(X,Y,Z,Rx,Ry,Rz);  
 
 - Supporting port: 30003
   
@@ -1894,7 +2036,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   ```
   MovJ(-500,100,200,150,0,90,AccJ=50)
   ```
-
+  Return: ErrorID,{},MovJ(-500,100,200,150,0,90,AccJ=50);   
 
 
 ## 5.2 MovL
@@ -1903,7 +2045,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
 - Description: linear movement, the target point is Cartesian point
 
-- Parameter
+- Parameters: 
 
   | Parameter | Type   | Description                  |
   | --------- | ------ | ---------------------------- |
@@ -1919,6 +2061,8 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
 
+- Return: ErrorID,{},MovL(X,Y,Z,Rx,Ry,Rz,SpeedL=R,AccL=R);  
+
 - Supporting port: 30003
   
 - Example
@@ -1926,7 +2070,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   ```
   MovL(-500,100,200,150,0,90,SpeedL=60)
   ```
-
+  Return: ErrorID,{},MovL(-500,100,200,150,0,90,SpeedL=60);
 
 
 ## 5.3 JointMovJ
@@ -1935,7 +2079,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
 - Description: point to point movement, the target point is joint point
 
-- Parameter
+- Parameters: 
 
   | Parameter | Type   | Description             |
   | --------- | ------ | ----------------------- |
@@ -1949,6 +2093,8 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   SpeedJ and AccJ are optional parameters, indicating setting joint velocity ratio and acceleration ratio respectively.
   The value has the same meaning as SpeedJ and AccJ setting by port 29999.
 
+- Return: ErrorID,{},JointMovJ(J1,J2,J3,J4,J5,J6,SpeedJ=R,AccJ=R);
+
 - Supporting port: 30003
   
 - Example
@@ -1956,7 +2102,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   ```
   JointMovJ(0,0,-90,0,90,0)
   ```
-
+  Return: ErrorID,{},JointMovJ(0,0,-90,0,90,0,SpeedJ=60,AccJ=50);
 
 
 ## 5.4 MovLIO
@@ -1965,7 +2111,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
 - Description: set the status of digital output port in straight line movement, and the target point is Cartesian point
 
-- Parameter
+- Parameters: 
 
   | Parameter | Type   | Description                                                  |
   | --------- | ------ | ------------------------------------------------------------ |
@@ -1984,6 +2130,9 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   The value is the same as the value of SpeedL and AccL set by port 29999.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
+
+- Return: 
+  ErrorID,{},MovLIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},SpeedL=R,AccL=R);
 
 - Supporting port: 30003
 
@@ -2021,6 +2170,9 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
 
+- Return: 
+  ErrorID,{},MovJIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},SpeedJ=R,AccJ=R);
+
 - Supporting port: 30003
 
 - Example
@@ -2038,7 +2190,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 - Description: move from the current position to a target position in an arc interpolated mode under the Cartesian coordinate system
   This command needs to combine with other motion commands to obtain the starting point of an arc trajectory
 
-- Parameter
+- Parameters: 
 
   | Parameter | Type   | Description                                       |
   | --------- | ------ | ------------------------------------------------- |
@@ -2054,6 +2206,9 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   | Rx2       | double | Rx2-axis coordinates of arc ending point, unit: ° |
   | Ry2       | double | Ry2-axis coordinates of arc ending point, unit: ° |
   | Rz2       | double | Rz2-axis coordinates of arc ending point, unit: ° |
+
+- Return: 
+  ErrorID,{},Arc(X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2,SpeedL=R,AccL=R);
 
 - Supporting port: 30003
 
@@ -2099,7 +2254,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
 - Description: dynamic following command based on Cartesian space. You are advised to set the frequency of customer secondary development to 33Hz (30ms), that is, set the cycle interval to at least 30ms.
 
-- Parameter
+- Parameters: 
 
   | Parameter | Type   | Description                   |
   | --------- | ------ | ----------------------------- |
@@ -2124,7 +2279,7 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
 - Function: MoveJog(axisID,CoordType=typeValue,User=index,Tool=index)    
 
-- Description: Jogging movement. The movement is not fixed distance. CR controller 3.5.2 and MG400/M1Pro controller 1.5.6 and later support this command.
+- Description: Jogging movement. The movement is not fixed distance. CR controller v3.5.2 and MG400/M1Pro controller v1.5.6 and later support this command.
 
 - Parameters：
 
@@ -2138,6 +2293,10 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   Tool: Tool index 0 to 9. The default value is 0.
   The optional parameters CoordType, User, and Tool are ignored if the User sends the node to run again.
 
+- Return: 
+  ErrorID,{},MoveJog(axisID,CoordType=typeValue,User=index,Tool=index);
+  If ErrorID is -1, it indicates that the set user coordinate index or tool coordinate index does not exist
+
 - Supporting port: 30003
 
 - Example
@@ -2147,23 +2306,31 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   ```
   MoveJog(j2-)
   ```
+  Return: 0,{},MoveJog(j2-);
 
+  ```
+  MoveJog()
+  ```
+  Return: 0,{},MoveJog();
+  
   
 
 ## 5.10 StartTrace
 
 - Function: StartTrace(traceName)
 
-- Description: trajectory fitting, the trajectory file is a Cartesian point. CR controller versions 3.5.2 and later support this command.
+- Description: trajectory fitting, the trajectory file is a Cartesian point. CR controller versions 3.5.2 and above support this command.
 
   Users can query the running status of robots by obtaining RobotMode.
-  ROBOT_MODE_RUNNING indicates that the robot is in the trajectory fitting operation, ROBOT_MODE_IDLE indicates that the trajectory fitting operation is completed, and ROBOT_MODE_ERROR indicates that the robot is alarming.
+  ROBOT_MODE_RUNNING indicates that the robot is in the trajectory fitting operation; ROBOT_MODE_IDLE indicates that the trajectory fitting operation is completed; ROBOT_MODE_ERROR indicates that the robot is alarming.
 
 - Parameters：
 
   | Parameter | Type   | Description                        |
   | --------- | ------ | ---------------------------------- |
   | traceName | string | Track file name (including suffix) |
+
+- Return: ErrorID,{},StartTrace(traceName);  
 
 - Supporting port: 30003
 
@@ -2173,9 +2340,18 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
   ```
   GetTraceStartPose(recv_string.json)
+  ```
+  Return: 0,{x,y,z,rx,ry,rz},GetTraceStartPose(recv_string.json);
+
+  ```
   MovJ(x,y,z,rx,ry,rz)
+  ```
+  Return: 0,{},MovJ(x,y,z,rx,ry,rz);
+
+  ```
   StartTrace(recv_string)
   ```
+  Return: 0,{},StartTrace(recv_string);
 
   
 
@@ -2183,10 +2359,10 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
 - Function: StartPath(traceName,const,cart)
 
-- Description: trajectory playback, the trajectory file is a Joint point. CR controller versions 3.5.2 and later support this command.
+- Description: trajectory playback (joint point in the trajectory file). CR controller versions 3.5.2 and above support this command.
 
   Users can query the running status of robots by obtaining RobotMode.
-  ROBOT_MODE_RUNNING indicates that the robot is in the track playback, ROBOT_MODE_IDLE indicates that the track playback is completed, and ROBOT_MODE_ERROR indicates alarm.
+  ROBOT_MODE_RUNNING indicates that the robot is in the trajectory playback, ROBOT_MODE_IDLE indicates that the trajectory playback is completed, and ROBOT_MODE_ERROR indicates alarm.
 
 - Parameters：
 
@@ -2205,53 +2381,29 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
   ```
   GetPathStartPose(recv_string)
+  ```
+  Return: 0,{j1,j2,j3,j4,j5,j6},GetPathStartPose(recv_string);
+  ```
   JointMovJ(j1,j2,j3,j4,j5,j6)
+  ```
+  Return: 0,{},JointMovJ(j1,j2,j3,j4,j5,j6);
+  ```
   StartPath(recv_string,0,1)
   ```
-
-  
-
-## 5.12 StartFCTrace
-
-- Function: StartFCTrace(traceName)
-
-- Description: Trajectory fitting with force control, trajectory file cartesian point. CR controller versions 3.5.2 and later support this command.
-
-  Users can query the running status of robots by obtaining RobotMode.
-  ROBOT_MODE_RUNNING indicates that the robot is in the track playback, ROBOT_MODE_IDLE indicates that the track playback is completed, and ROBOT_MODE_ERROR indicates alarm.
-
-- Parameters：
-
-  | Parameter | Type   | Description                        |
-  | --------- | ------ | ---------------------------------- |
-  | traceName | string | Track file name (including suffix) |
-
-- Supporting port: 30003
-
-- Example:
-
-  Get the first point {j1,j2,j3,j4,j5,j6} of the recv_string path.
-  After the point-to-point movement reaches {j1,j2,j3,j4,j5,j6}, the file recv_string is delivered for trajectory playback at the original speed, and at a uniform speed in the Cartesian path.
-
-  ```
-  GetTraceStartPose(recv_string)
-  MovJ(x,y,z,rx,ry,rz)
-  StartFCTrace(recv_string)
-  Sync()  
-  ```
-
-  Due to trajectory fitting with force control, the end point is uncertain. Sync must be added to wait for StartFCTrace to finish execution before other motion instructions can be continued.
-
-  
+  Return: 0,{},StartPath(recv_string,0,1);
 
 
-## 5.13 Sync
+
+
+## 5.12 Sync
 
 - Function: Sync()
 
-- Description: The blocking program executes and does not return until all queue instructions have been executed.
+- Description: The blocking program executes queue commands and does not return until all queue commands have been executed.
 
-- Parameters：None
+- Parameters: null
+
+- Return: ErrorID,{},Sync();   
 
 - Supporting port: 30003
 
@@ -2264,11 +2416,11 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   
 
 
-## 5.14 RelMovJTool
+## 5.13 RelMovJTool
 
 - Function: RelMovJTool(offsetX, offsetY,offsetZ, offsetRx,offsetRy,offsetRz, Tool,SpeedJ=R, AccJ=R,User=Index)  
 
-- Description: Relative motion is performed along the tool coordinate system, and the end motion is joint motion. CR controller versions 3.5.2 and later support this command.
+- Description: Perform relative motion along the tool coordinate system, and the end motion is joint motion. CR controller versions 3.5.2 and above support this command.
 
 - Parameters：
 
@@ -2286,6 +2438,9 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   The value is the same as the value of SpeedL and AccL set by port 29999.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
+
+- Return:
+  ErrorID,{},RelMovJTool(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz,Tool,SpeedJ=R, AccJ=R,User=Index);
 
 - Supporting port: 30003
 
@@ -2297,11 +2452,11 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
   
 
-## 5.15 RelMovLTool
+## 5.14 RelMovLTool
 
 - Function: RelMovLTool(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz, Tool,SpeedL=R, AccL=R,User=Index)  
 
-- Description: Relative motion is performed along the tool coordinate system, and the end motion is linear motion. CR controller versions 3.5.2 and later support this command.
+- Description: Perform relative motion along the tool coordinate system, and the end motion is linear motion. CR controller versions 3.5.2 and above support this command.
 
 - Parameters：
 
@@ -2320,6 +2475,9 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
 
+- Return: 
+  ErrorID,{},RelMovLTool(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz,Tool,SpeedL=R, AccL=R,User=Index);
+
 - Supporting port: 30003
 
 - Example
@@ -2330,11 +2488,11 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
   
 
-## 5.16 RelMovJUser
+## 5.15 RelMovJUser
 
 - Function: RelMovJUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz, User,SpeedJ=R, AccJ=R,Tool=Index)
 
-- Description: Relative motion is performed along the user coordinate system, and the end motion mode is the joint motion. CR controller 3.5.2 and MG400/M1Pro controller 1.5.6 and later support this command.
+- Description: Perform relative motion along the user coordinate system, and the end motion mode is the joint motion. CR controller 3.5.2 and MG400/M1Pro controller 1.5.6 and above support this command.
 
 - Parameters：
 
@@ -2353,6 +2511,9 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
 
+- Return: 
+  ErrorID,{},RelMovJUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz,User,SpeedJ=R, AccJ=R,Tool=Index);
+  
 - Supporting port: 30003
 
 - Example:
@@ -2363,11 +2524,11 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
   
 
-## 5.17 RelMovLUser
+## 5.16 RelMovLUser
 
 - Function: RelMovLUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz, User,SpeedL=R, AccL=R,Tool=Index)  
 
-- Description: Relative motion performed along the user coordinate system, and the end motion mode is a linear motion. CR controller 3.5.2 and MG400/M1Pro controller 1.5.6 and later support this command.
+- Description: Perform relative motion along the user coordinate system, and the end motion mode is a linear motion. CR controller 3.5.2 and MG400/M1Pro controller 1.5.6 and above support this command.
 
 - Parameters：
 
@@ -2381,10 +2542,13 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   | OffsetRz  | double | Rz-axis offset, unit: °                                |
   | User      | int    | Calibrated user coordinate system, value range: 0 to 9 |
 
-  SpeedL and AccL are optional parameters, indicating setting user coordinate system, tool coordinate system, Cartesian speed ratio and acceleration ratio values respectively.
+  SpeedL and AccL are optional parameters, which refer to setting user coordinate system, tool coordinate system, Cartesian speed ratio and acceleration ratio values respectively.
   The value is the same as the value of SpeedL and AccL set by port 29999.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
+
+- Return: 
+  ErrorID,{},RelMovLUser(OffsetX,OffsetY,OffsetZ,OffsetRx,OffsetRy,OffsetRz,User,SpeedL=R, AccL=R,Tool=Index);
 
 - Supporting port: 30003
 
@@ -2396,9 +2560,9 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 
   
 
-## 5.18 RelJointMovJ
+## 5.19 RelJointMovJ
 
-- Description: Relative motion instruction is conducted along the joint coordinate system of each axis, and the end motion mode is joint motion. CR controller 3.5.2 and MG400/M1Pro controller 1.5.6 and later support this command.
+- Description: Perform relative motion along the joint coordinate system of each axis, and the end motion mode is joint motion. CR controller V3.5.2 and MG400/M1Pro controller V1.5.6 and above support this command.
 
 - Function: RelJointMovJ(Offset1,Offset2,Offset3,Offset4,Offset5,Offset6,SpeedJ=R, AccJ=R)  
 
@@ -2413,8 +2577,11 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   | Offset5   | double | J5-axis offset, unit: ° |
   | Offset6   | double | J6-axis offset, unit: ° |
 
-  SpeedL and AccL are optional parameters, indicating setting user coordinate system, tool coordinate system, Cartesian speed ratio and acceleration ratio values respectively.
-  The value is the same as the value of SpeedL and AccL set by port 29999.
+  SpeedJ and AccJ are optional parameters, which refer to setting joint speed ratio and acceleration ratio respectively.
+  The meaning of SpeedJ and AccJ value is the same as that of SpeedJ and AccJ value set by port 29999.
+
+- Return: 
+  ErrorID,{},RelJointMovJ(Offset1,Offset2,Offset3,Offset4,Offset5,Offset6,SpeedJ=R, AccJ=R);
 
 - Supporting port: 30003
 

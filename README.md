@@ -15,7 +15,7 @@
 - V1.5-2021/07/23: 数据的结构体去除掉添加一个是字节位置值；对RobotMode的状态优先级进行描述；新增机器人上电接口。
 - V1.6-2021/08/04:调整Dashboard端口和实时反馈端口表格位置；根据GK项目，新增运行脚本、读写保存寄存器、获取机器人状态等指令；
 - V1.7-2021/08/23:添加Sync指令、SetArmOrientation描述优化、电子皮肤SetObstacleAvoid、SetSafeSkin相关指令、轨迹复现相关指令GetTraceStartPose、GetPathStartPose、StartTrace、StartPath以及正解逆解接口InverseSolution、PositiveSolution；以及若干书写错误；
-- V1.8-2021/08/31:新增碰撞等级SetCollisionLevel、轨迹文件预处理接口HandleTrajPoints、获取六维力数据GetSixForceData、获取笛卡尔坐标系下机械臂的实时位姿接口GetPose、获取关节坐标系下机械臂的实时位姿接口GetAngle、急停指令EmergencyStop、带力控的轨迹拟合StartFCTrace、关节/笛卡尔点动指令MoveJog；
+- V1.8-2021/08/31:新增碰撞等级SetCollisionLevel、轨迹文件预处理接口HandleTrajPoints、获取六维力数据GetSixForceData、获取笛卡尔坐标系下机械臂的实时位姿接口GetPose、获取关节坐标系下机械臂的实时位姿接口GetAngle、急停指令EmergencyStop\关节/点动指令MoveJog；
 - V1.8-2021/09/15:定义轨迹预处理运行结果接口；若用户下发不带参数的该指令，代表查询当前指令的结果（适用于轨迹文件预处理）；轨迹复现/拟合/带力控拟合通过RobotMode获取机器人运行状态；
 - V1.8-2021/09/27:更改Sync指令的端口到29999(阻塞指令),待所有队列指令执行完才返回done；以及去掉多余指令；
 - V1.8-2021/10/15:根据PX需要末端485支持使用RTU的功能的指令，新增支持Modbus的TCP和RTU通信的指令；详情见《末端485的modbusRTU功能拓展》以及《工业项目Modbus需求及概要设计方案》；
@@ -34,7 +34,6 @@
 - V2.4-2022/01/24：修改RelMovJ指令参数；根据《相对运动指令方案》新增5条相对运动相关指令；
 - V2.5-2022/02/08:   新增StartDrag、StopDrag、SetCollideDrag、SetTerminalKeys、SetTerminal485、GetTerminal485等指令分布对应进入拖拽、退出拖拽模式、设置是否强制进入拖拽模式、设置末端按键功能使能状态、设置末端485的参数、获取末端485的参数。GetErrorID的描述，将碰撞检测和电子皮肤碰撞的错误码返回设置到控制器和算法错误码数组中，并将错误码描述章节中-2，-3的描述删除；
 - V2.6-2022/02/10:  修改正逆解指令的示例，添加LoadSwitch指令，配合PayLoad使用；
-- V2.7-2022/02/11:  带力控的轨迹拟合添加说明，需要在执行StartFCTrace后加上Sync；
 - V2.8-2022/02/16:  ServoP/ServoJ指令添加使用频率限制，修改SetCollideDrag开关状态，改为0关闭，1开启，与文档其它设置指令统一；
 - V2.9-2022/03/12：JointMovJ指令优化；删掉多余的不建议使用的指令；新增MG400/M1Pro版本支持的指令；
 - V2.10-2022/03/17：SetArmOrientation指令新增M1Pro指令的描述；添加实时数据反馈的产品支持功能；
@@ -96,69 +95,69 @@
 
 ​	机器人设置相关指令如下：
 
-| 指令              | 支持产品    | 描述                                                         |
-| ----------------- | ----------- | ------------------------------------------------------------ |
-| EnableRobot       | CR\MG\M1Pro | 使能机器人                                                   |
-| DisableRobot      | CR\MG\M1Pro | 下使能机器人                                                 |
-| ClearError        | CR\MG\M1Pro | 复位，用于清除错误                                           |
+| 指令                | 支持产品        | 描述                                       |
+| ----------------- | ----------- | ---------------------------------------- |
+| EnableRobot       | CR\MG\M1Pro | 使能机器人                                    |
+| DisableRobot      | CR\MG\M1Pro | 下使能机器人                                   |
+| ClearError        | CR\MG\M1Pro | 复位，用于清除错误                                |
 | ResetRobot        | CR\MG\M1Pro | 机器人停止当前动作，重新接收使能，规划停                     |
-| SpeedFactor       | CR\MG\M1Pro | 设置全局速率比                                               |
-| User              | CR\MG\M1Pro | 选择已标定的用户坐标系（笛卡尔空间显示值 实际生效根据点）    |
-| Tool              | CR\MG\M1Pro | 选择已标定的工具坐标系                                       |
-| RobotMode         | CR\MG\M1Pro | 机器人模式                                                   |
-| PayLoad           | CR\MG\M1Pro | 设置负载                                                     |
-| DO                | CR\MG\M1Pro | 设置数字量输出端口状态                                       |
-| DOExecute         | CR          | 设置数字量输出端口状态（立即指令）                           |
-| ToolDO            | CR          | 设置末端数字量输出端口状态                                   |
-| ToolDOExecute     | CR          | 设置末端数字量输出端口状态（立即指令）                       |
-| AO                | CR          | 设置模拟量输出端口状态                                       |
-| AOExecute         | CR          | 设置模拟量输出端口状态（立即指令）                           |
+| SpeedFactor       | CR\MG\M1Pro | 设置全局速率比                                  |
+| User              | CR\MG\M1Pro | 选择已标定的用户坐标系（笛卡尔空间显示值 实际生效根据点）            |
+| Tool              | CR\MG\M1Pro | 选择已标定的工具坐标系                              |
+| RobotMode         | CR\MG\M1Pro | 机器人模式                                    |
+| PayLoad           | CR\MG\M1Pro | 设置负载                                     |
+| DO                | CR\MG\M1Pro | 设置数字量输出端口状态                              |
+| DOExecute         | CR          | 设置数字量输出端口状态（立即指令）                        |
+| ToolDO            | CR          | 设置末端数字量输出端口状态                            |
+| ToolDOExecute     | CR          | 设置末端数字量输出端口状态（立即指令）                      |
+| AO                | CR          | 设置模拟量输出端口状态                              |
+| AOExecute         | CR          | 设置模拟量输出端口状态（立即指令）                        |
 | AccJ              | CR\MG\M1Pro | 设置关节加速度比例。该指令仅对MovJ、MovJIO、MovJR、 JointMovJ指令有效 |
 | AccL              | CR\MG\M1Pro | 设置笛卡尔加速度比例。该指令仅对MovL、MovLIO、MovLR、Jump、Arc、Circle指令有效。 |
 | SpeedJ            | CR\MG\M1Pro | 设置关节速度比例。该指令仅对MovJ、MovJIO、MovJR、 JointMovJ指令有效。 |
 | SpeedL            | CR\MG\M1Pro | 设置笛卡尔速度比例。该指令仅对MovL、MovLIO、MovLR、Jump、Arc、Circle指令有效。 |
-| Arch              | CR\MG\M1Pro | 设置Jump门型参数索引（起始点抬升高度、最大抬升高度、结束点下降高度） |
-| CP                | CR\MG\M1Pro | 运动时设置平滑过渡                                           |
-| SetArmOrientation | CR          | 设置手系                                                     |
-| PowerOn           | CR          | 机器人上电                                                   |
-| RunScript         | CR\MG\M1Pro | 运行脚本                                                     |
-| StopScript        | CR\MG\M1Pro | 停止脚本                                                     |
-| PauseScript       | CR\MG\M1Pro | 暂停脚本                                                     |
-| ContinueScript    | CR\MG\M1Pro | 继续脚本                                                     |
-| SetSafeSkin       | CR          | 设置安全皮肤开关状态                                         |
-| GetTraceStartPose | CR          | 获取轨迹拟合中首个点位                                       |
-| GetPathStartPose  | CR          | 获取轨迹复现中首个点位                                       |
-| PositiveSolution  | CR          | 正解                                                         |
-| InverseSolution   | CR          | 逆解                                                         |
-| SetCollisionLevel | CR\MG\M1Pro | 设置碰撞等级                                                 |
-| HandleTrajPoints  | CR          | 轨迹文件预处理                                               |
-| GetSixForceData   | CR          | 获取六维力数据                                               |
-| GetAngle          | CR\MG\M1Pro | 获取关节坐标系下机械臂的实时位姿                             |
-| GetPose           | CR\MG\M1Pro | 获取笛卡尔坐标系下机械臂的实时位姿                           |
-| EmergencyStop     | CR\MG\M1Pro | 急停                                                         |
-| ModbusCreate      | CR\MG\M1Pro | 创建Modbus主站，并和从站建立连接                             |
-| ModbusClose       | CR\MG\M1Pro | 和Modbus从站断开连接                                         |
-| GetInBits         | CR\MG\M1Pro | 读离散输入功能                                               |
-| GetInRegs         | CR\MG\M1Pro | 读输入寄存器                                                 |
-| GetCoils          | CR\MG\M1Pro | 读线圈功能                                                   |
-| SetCoils          | CR\MG\M1Pro | 写线圈功能                                                   |
-| GetHoldRegs       | CR\MG\M1Pro | 读保存寄存器                                                 |
-| SetHoldRegs       | CR\MG\M1Pro | 写保存寄存器                                                 |
-| GetErrorID        | CR\MG\M1Pro | 获取错误ID                                                   |
-| DI                | CR\MG\M1Pro | 获取数字量输入端口状态                                       |
-| ToolDI            | CR          | 获取末端数字量输入端口状态                                   |
-| AI                | CR          | 获取模拟量输入端口电压值                                     |
-| ToolAI            | CR          | 获取末端模拟量输入端口电压值                                 |
-| DIGroup           | CR          | 获取输入组端口状态                                           |
-| DOGroup           | CR          | 设置数字输出组端口状态                                       |
-| BrakeControl      | CR          | 抱闸控制                                                     |
-| StartDrag         | CR          | 进入拖拽                                                     |
-| StopDrag          | CR          | 退出拖拽                                                     |
-| SetCollideDrag    | CR          | 强制进入拖拽                                                 |
-| SetTerminalKeys   | CR          | 设置末端按键功能使能状态                                     |
-| SetTerminal485    | CR          | 设置末端485的参数                                            |
-| GetTerminal485    | CR          | 获取末端485的参数                                            |
-| LoadSwitch        | CR          | 控制负载设置状态                                             |
+| Arch              | CR\MG\M1Pro | 设置Jump门型参数索引（起始点抬升高度、最大抬升高度、结束点下降高度）     |
+| CP                | CR\MG\M1Pro | 运动时设置平滑过渡                                |
+| SetArmOrientation | CR          | 设置手系                                     |
+| PowerOn           | CR          | 机器人上电                                    |
+| RunScript         | CR\MG\M1Pro | 运行脚本                                     |
+| StopScript        | CR\MG\M1Pro | 停止脚本                                     |
+| PauseScript       | CR\MG\M1Pro | 暂停脚本                                     |
+| ContinueScript    | CR\MG\M1Pro | 继续脚本                                     |
+| SetSafeSkin       | CR          | 设置安全皮肤开关状态                               |
+| GetTraceStartPose | CR          | 获取轨迹拟合中首个点位                              |
+| GetPathStartPose  | CR          | 获取轨迹复现中首个点位                              |
+| PositiveSolution  | CR          | 正解                                       |
+| InverseSolution   | CR          | 逆解                                       |
+| SetCollisionLevel | CR\MG\M1Pro | 设置碰撞等级                                   |
+| HandleTrajPoints  | CR          | 轨迹文件预处理                                  |
+| GetSixForceData   | CR          | 获取六维力数据                                  |
+| GetAngle          | CR\MG\M1Pro | 获取关节坐标系下机械臂的实时位姿                         |
+| GetPose           | CR\MG\M1Pro | 获取笛卡尔坐标系下机械臂的实时位姿                        |
+| EmergencyStop     | CR\MG\M1Pro | 急停                                       |
+| ModbusCreate      | CR\MG\M1Pro | 创建Modbus主站，并和从站建立连接                      |
+| ModbusClose       | CR\MG\M1Pro | 和Modbus从站断开连接                            |
+| GetInBits         | CR\MG\M1Pro | 读离散输入功能                                  |
+| GetInRegs         | CR\MG\M1Pro | 读输入寄存器                                   |
+| GetCoils          | CR\MG\M1Pro | 读线圈功能                                    |
+| SetCoils          | CR\MG\M1Pro | 写线圈功能                                    |
+| GetHoldRegs       | CR\MG\M1Pro | 读保存寄存器                                   |
+| SetHoldRegs       | CR\MG\M1Pro | 写保存寄存器                                   |
+| GetErrorID        | CR\MG\M1Pro | 获取错误ID                                   |
+| DI                | CR\MG\M1Pro | 获取数字量输入端口状态                              |
+| ToolDI            | CR          | 获取末端数字量输入端口状态                            |
+| AI                | CR          | 获取模拟量输入端口电压值                             |
+| ToolAI            | CR          | 获取末端模拟量输入端口电压值                           |
+| DIGroup           | CR          | 获取输入组端口状态                                |
+| DOGroup           | CR          | 设置数字输出组端口状态                              |
+| BrakeControl      | CR          | 抱闸控制                                     |
+| StartDrag         | CR          | 进入拖拽                                     |
+| StopDrag          | CR          | 退出拖拽                                     |
+| SetCollideDrag    | CR          | 强制进入拖拽                                   |
+| SetTerminalKeys   | CR          | 设置末端按键功能使能状态                             |
+| SetTerminal485    | CR          | 设置末端485的参数                               |
+| GetTerminal485    | CR          | 获取末端485的参数                               |
+| LoadSwitch        | CR          | 控制负载设置状态                                 |
 
 
 
@@ -172,12 +171,12 @@
 
 - 可选参数详解：
 
-  | 参数名  | 类型   | 含义                                                         |
-  | ------- | ------ | ------------------------------------------------------------ |
+  | 参数名     | 类型     | 含义                                       |
+  | ------- | ------ | ---------------------------------------- |
   | load    | double | 负载重量kg。CR3/CR3L负载范围：0~3Kg；CR5/CR5D负载范围：0~5Kg；CR7负载范围：0~7Kg；CR10负载范围：0~10Kg；CR12负载范围：0~12Kg；CR16负载范围：0~16Kg；MG400负载范围：0~0.5Kg；M1 Pro负载范围：0~1.5Kg； |
-  | centerX | double | X方向偏心距离mm，取值范围：-500mm~500mm；                    |
-  | centerY | double | Y方向偏心距离mm，取值范围：-500mm~500mm；                    |
-  | centerZ | double | Z方向偏心距离mm，取值范围：-500mm~500mm；                    |
+  | centerX | double | X方向偏心距离mm，取值范围：-500mm~500mm；             |
+  | centerY | double | Y方向偏心距离mm，取值范围：-500mm~500mm；             |
+  | centerZ | double | Z方向偏心距离mm，取值范围：-500mm~500mm；             |
 
 - 返回：
 
@@ -189,7 +188,6 @@
 
 - 说明：**可选参数数量：0/1/4**  （不填参数，正常接收ErrorID返回0；填一个参数默认为负载重量参数,ErrorID返回0；填四个参数分别表示负载重量、X方向偏心距、Y方向偏心距以及Z方向偏心距，ErrorID返回0;失败返回错误码,参考第六章；）
 
-  
 
 ## 3.2 DisableRobot
 
@@ -231,7 +229,6 @@
 
 - 说明：清除报警后，用户可以根据RobotMode来判断机器人是否还处于报警状态；对于清除不掉的报警需要重启控制柜解决；(详见GetErrorID说明)
 
-  
 
 ## 3.4 ResetRobot
 
@@ -250,8 +247,8 @@
 - 示例：
 
   ResetRobot()
-  
-  
+
+  ​
 
 ## 3.5 SpeedFactor
 
@@ -276,8 +273,7 @@
 - 示例：
 
   SpeedFactor(80)
-  
-  
+
 
 
 ## 3.6 User
@@ -305,8 +301,8 @@
 - 示例：
 
   User(1)
-  
-  
+
+  ​
 
 ## 3.7 Tool
 
@@ -333,8 +329,8 @@
 - 示例：
 
   Tool(1)
-  
-  
+
+  ​
 
 ## 3.8 **RobotMode**
 
@@ -352,7 +348,7 @@
   | ---- | --------------------- | ---------- |
   | 1    | ROBOT_MODE_INIT       | 初始化        |
   | 2    | ROBOT_MODE_BRAKE_OPEN | 抱闸松开       |
-  | 3    |                       | 保留位        |
+  | 3    | ---                   | 保留位        |
   | 4    | ROBOT_MODE_DISABLED   | 未使能(抱闸未松开) |
   | 5    | ROBOT_MODE_ENABLE     | 使能(空闲)     |
   | 6    | ROBOT_MODE_BACKDRIVE  | 拖拽         |
@@ -375,7 +371,6 @@
 
 - 其中运行状态包含：轨迹复现/拟合中、机器人运行状态以及脚本运行状态；
 
-  
 
 ## 3.9 PayLoad
 
@@ -389,10 +384,10 @@
 
 - 参数详解：2
 
-  | 参数名  | 类型   | 含义                                                         |
-  | ------- | ------ | ------------------------------------------------------------ |
+  | 参数名     | 类型     | 含义                                       |
+  | ------- | ------ | ---------------------------------------- |
   | weight  | double | 负载重量 kg。CR3/CR3L负载范围：0~3Kg；CR5/CR5D负载范围：0~5Kg；CR7负载范围：0~7Kg；CR10负载范围：0~10Kg；CR12负载范围：0~12Kg；CR16负载范围：0~16Kg；MG400负载范围：0~0.5Kg；M1 Pro负载范围：0~1.5Kg； |
-  | inertia | double | 负载惯量 kgm²                                                |
+  | inertia | double | 负载惯量 kgm²                                |
 
 - 返回：
 
@@ -401,10 +396,10 @@
 - 示例：
 
   PayLoad(3,0.4)
-  
+
   说明：为了兼容Lua的LoadSet，tcp指令支持LoadSet，使用LoadSet等同于调用PayLoad，另外要和LoadSwitch指令一起使用
-  
-  
+
+  ​
 
 ## 3.10 DO
 
@@ -433,7 +428,6 @@
 
 - 说明：使用取值范围100-1000需要有拓展IO模块的硬件支持；
 
-  
 
 ## 3.11 DOExecute
 
@@ -464,7 +458,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.12 ToolDO
 
@@ -490,10 +483,9 @@
 - 示例：
 
   ToolDO(1,1)
-  
+
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.13 ToolDOExecute
 
@@ -519,10 +511,9 @@
 - 示例：
 
   ToolDOExecute(1,1)
-  
+
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.14 AO
 
@@ -553,7 +544,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.15 AOExecute
 
@@ -584,7 +574,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 
 ## 3.16 AccJ
@@ -610,8 +599,8 @@
 - 示例：
 
   AccJ(50)
-  
-  
+
+  ​
 
 ## 3.17 AccL
 
@@ -636,8 +625,8 @@
 - 示例：
 
   AccL(50)
-  
-  
+
+  ​
 
 ##  3.18 SpeedJ
 
@@ -662,8 +651,8 @@
 - 示例：
 
   SpeedJ(50)
-  
-  
+
+  ​
 
 ## 3.19 SpeedL
 
@@ -688,8 +677,8 @@
 - 示例：
 
   SpeedL(50)
-  
-  
+
+  ​
 
 ## 3.20 Arch
 
@@ -714,8 +703,8 @@
 - 示例：
 
   Arch(1)
-  
-  
+
+  ​
 
 ## 3.21 CP
 
@@ -740,8 +729,8 @@
 - 示例：
 
   CP(50)
-  
-  
+
+  ​
 
 ## 3.23 SetArmOrientation
 
@@ -753,11 +742,11 @@
 
 - 可选参数详解：4
 
-  | 参数名  | 类型 | 含义                                                         |      |
-  | ------- | ---- | ------------------------------------------------------------ | ---- |
+  | 参数名     | 类型   | 含义                                       |      |
+  | ------- | ---- | ---------------------------------------- | ---- |
   | LorR    | int  | 臂方向向前/向后(1/-1)<br /> 1：向前  （**其中对于M1Pro产品需要设置0表示左手系**）<br />-1：向后  （**其中对于M1Pro产品需要设置1表示右手系**） |      |
-  | UorD    | int  | 臂方向肘上/肘下(1/-1)<br /> 1：肘上<br />-1：肘下            |      |
-  | ForN    | int  | 臂方向腕部是否翻转(1/-1)<br />  1：腕不翻转<br />-1：腕翻转  |      |
+  | UorD    | int  | 臂方向肘上/肘下(1/-1)<br /> 1：肘上<br />-1：肘下     |      |
+  | ForN    | int  | 臂方向腕部是否翻转(1/-1)<br />  1：腕不翻转<br />-1：腕翻转 |      |
   | Config6 | int  | 第六轴角度标识<br />  -1,-2...：第6轴角度为[0,-90]为-1；[-90,-180]为-2；以此类推<br />1,2...：第6轴角度为[0,90]为1；[90,180]为2；以此类推 |      |
 
 - 返回：
@@ -774,7 +763,6 @@
 
 - **此条指令为CR系列以及M1Pro机器人特有；可选参数数量：1/4;填一个参数默认为M1Pro机型，表示左右手系；填写四个参数表示CR系列机器参数；其他参数数量填写将会返回报错；**
 
-  
 
 ## 3.24 PowerOn
 
@@ -798,7 +786,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 
 ## 3.25 RunScript
@@ -825,8 +812,8 @@
 - 示例：
 
   RunScript(demo)
-  
-  
+
+  ​
 
 ## 3.26 StopScript
 
@@ -863,8 +850,8 @@
 - 示例：
 
   PauseScript()
-  
-  
+
+  ​
 
 ## 3.28 ContinueScript
 
@@ -883,8 +870,7 @@
 - 示例：
 
   ContinueScript()
-  
-  
+
 
 
 ## 3.29 SetSafeSkin
@@ -945,7 +931,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.31 GetPathStartPose
 
@@ -976,7 +961,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.32 PositiveSolution
 
@@ -1019,7 +1003,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.33 InverseSolution
 
@@ -1076,7 +1059,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 
 ## 3.34 SetCollisionLevel
@@ -1103,8 +1085,8 @@
 - 示例：
 
   SetCollisionLevel(1)
-  
-  
+
+  ​
 
 ## 3.35 HandleTrajPoints
 
@@ -1138,7 +1120,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.36 GetSixForceData
 
@@ -1183,8 +1164,8 @@
    GetAngle()
 
    返回：0,{0.0,0.0,90.0,0.0,-90.0,0.0},GetAngle(); 
-   
-   
+
+   ​
 
 ## 3.38 GetPose
 
@@ -1202,20 +1183,20 @@
 
 - 参数详解：
 
-  | 参数名 | 类型 | 含义             |
-  | ------ | ---- | ---------------- |
-  | user   | int  | 用户坐标系索引号 |
-  | tool   | int  | 工具坐标系索引号 |
-  
+  | 参数名  | 类型   | 含义       |
+  | ---- | ---- | -------- |
+  | user | int  | 用户坐标系索引号 |
+  | tool | int  | 工具坐标系索引号 |
+
 - 示例：
 
   默认参数返回上位机选择坐标系的位姿，同时传入user和tool索引值返回指定坐标系下的位姿
 
   GetPose()
-  
+
   返回：0,{-473.0,-141.0,469.0,-180.0,0.0,90.0},GetPose();
-  
-  
+
+  ​
 
 ## 3.39 EmergencyStop
 
@@ -1234,8 +1215,7 @@
 - 示例：
 
    EmergencyStop()
-   
-   
+
 
 
 ## 3.40 ModbusCreate
@@ -1264,11 +1244,10 @@
 
 - 示例：建立RTU通信主站(60000末端透传端口)
 
-  ModbusCreate(127.0.0.1,60000,1,true)
+  ModbusCreate(127.0.0.1,60000,1,1)
 
 - 说明：**CR控制器3.5.2版本以及以上版本支持；**
 
-  
 
 ## 3.41 ModbusClose
 
@@ -1282,9 +1261,9 @@
 
 - 参数详解：
 
-  | 参数名   | 类型     | 含义       |
-  | ----- | ------ | -------- |
-  | index | string | 返回的主站索引； |
+  | 参数名   | 类型   | 含义       |
+  | ----- | ---- | -------- |
+  | index | int  | 返回的主站索引； |
 
 
 - 返回：
@@ -1297,7 +1276,6 @@
 
 - 说明：**CR控制器3.5.2版本以及以上版本支持；**
 
-  
 
 ## 3.42 GetInBits
 
@@ -1311,11 +1289,11 @@
 
 - 参数详解：
 
-  | 参数名 | 类型 | 含义                 |
-  | ------ | ---- | -------------------- |
-  | index  | int  | 返回的主站索引；     |
-  | addr   | int  | 视从站配置而定；     |
-  | count  | int  | 个数，取值范围1~16； |
+  | 参数名   | 类型   | 含义           |
+  | ----- | ---- | ------------ |
+  | index | int  | 返回的主站索引；     |
+  | addr  | int  | 视从站配置而定；     |
+  | count | int  | 个数，取值范围1~16； |
 
 
 - 返回：
@@ -1332,7 +1310,6 @@
 
 - 说明：**CR控制器3.5.2版本以及以上版本支持；**
 
-   
 
 ## 3.43 GetInRegs
 
@@ -1368,7 +1345,6 @@
 
 - 说明：**CR控制器3.5.2版本以及以上版本支持；**
 
-  
 
 ## 3.44 GetCoils
 
@@ -1403,7 +1379,6 @@
 
 - 说明：**CR控制器3.5.2版本以及以上版本支持；**
 
-  
 
 ## 3.45 SetCoils
 
@@ -1439,7 +1414,6 @@
 
 - 说明：**CR控制器3.5.2版本以及以上版本支持；**
 
-  
 
 ## 3.46 GetHoldRegs
 
@@ -1453,11 +1427,11 @@
 
 - 参数详解：
 
-  | 参数名  | 类型   | 含义                                                         |
-  | ------- | ------ | ------------------------------------------------------------ |
+  | 参数名     | 类型     | 含义                                       |
+  | ------- | ------ | ---------------------------------------- |
   | index   | int    | index,返回的主站索引，最多支持5个设备,取值范围(0~4)；        |
-  | addr    | int    | 保持寄存器的起始地址。视从站配置而定；                       |
-  | count   | int    | 读取指定数量type类型的数据。取值范围：1~4                    |
+  | addr    | int    | 保持寄存器的起始地址。视从站配置而定；                      |
+  | count   | int    | 读取指定数量type类型的数据。取值范围：1~4                 |
   | valType | string | 数据类型：<br /> 如果为空，默认读取16位无符号整数（2个字节，占用1个寄存器）<br /> U16：读取16位无符号整数（2个字节，占用1个寄存器）<br /> U32：读取32位无符号整数（4个字节，占用2个寄存器）<br /> F32：读取32位单精度浮点数（4个字节，占用2个寄存器）<br /> F64：读取64位双精度浮点数（8个字节，占用4个寄存器） |
 
 
@@ -1475,7 +1449,6 @@
 
 - 说明：**CR控制器3.5.2版本以及以上版本支持；**
 
-   
 
 ## 3.47 SetHoldRegs
 
@@ -1489,12 +1462,12 @@
 
 - 参数详解：
 
-  | 参数名  | 类型   | 含义                                                         |
-  | ------- | ------ | ------------------------------------------------------------ |
-  | index   | int    | index,返回的主站索引，最多支持5个设备,取值范围(0~4)          |
-  | addr    | int    | 保持寄存器的起始地址。视从站配置而定；                       |
-  | count   | int    | 写入指定数量type类型的数据。取值范围：1~4                    |
-  | valTab  | string | 保持寄存器地址的值                                           |
+  | 参数名     | 类型     | 含义                                       |
+  | ------- | ------ | ---------------------------------------- |
+  | index   | int    | index,返回的主站索引，最多支持5个设备,取值范围(0~4)         |
+  | addr    | int    | 保持寄存器的起始地址。视从站配置而定；                      |
+  | count   | int    | 写入指定数量type类型的数据。取值范围：1~4                 |
+  | valTab  | string | 保持寄存器地址的值                                |
   | valType | string | 数据类型     <br /> 如果为空，默认读取16位无符号整数（2个字节，占用1个寄存器） <br /> U16：读取16位无符号整数（2个字节，占用1个寄存器）  <br />U32：读取32位无符号整数（4个字节，占用2个寄存器）   <br />F32：读取32位单精度浮点数（4个字节，占用2个寄存器）    <br /> F64：读取64位双精度浮点数（8个字节，占用4个寄存器） |
 
 
@@ -1512,7 +1485,6 @@
 
 - 说明：**CR控制器3.5.2版本以及以上版本支持；**
 
-  
 
 ## 3.48 GetErrorID
 
@@ -1538,7 +1510,6 @@
 
 - **CR控制器3.5.2版本以及以上版本支持；**
 
-  
 
 
 ## 3.49 DI
@@ -1572,7 +1543,6 @@
 
 - 说明：使用取值范围100-1000需要有拓展IO模块的硬件支持；
 
-  
 
 ## 3.50 ToolDI
 
@@ -1605,7 +1575,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.51 AI
 
@@ -1708,7 +1677,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.54 DOGroup
 
@@ -1747,7 +1715,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 
 ## 3.55 BrakeControl
@@ -1773,7 +1740,7 @@
 
   ErrorID,{},BrakeControl(axisID,value);  
 
-- 
+- ​
 
 - 示例：打开关节1抱闸
 
@@ -1787,7 +1754,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.56 StartDrag
 
@@ -1811,7 +1777,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.57 StopDrag
 
@@ -1835,7 +1800,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.58 SetCollideDrag
 
@@ -1849,8 +1813,8 @@
 
 - 参数详解：1
 
-  | 参数名 | 类型 | 含义                                       |
-  | ------ | ---- | ------------------------------------------ |
+  | 参数名    | 类型   | 含义                        |
+  | ------ | ---- | ------------------------- |
   | status | int  | status：强制拖拽开关状态，0：关闭；1：开启 |
 
 
@@ -1866,7 +1830,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.59 SetTerminalKeys
 
@@ -1880,8 +1843,8 @@
 
 - 参数详解：1
 
-  | 参数名 | 类型 | 含义                                               |
-  | ------ | ---- | -------------------------------------------------- |
+  | 参数名    | 类型   | 含义                            |
+  | ------ | ---- | ----------------------------- |
   | status | int  | status：设置末端按键功能使能状态，0：关闭；1：开启 |
 
 
@@ -1897,7 +1860,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.60 SetTerminal485
 
@@ -1911,12 +1873,12 @@
 
 - 参数详解：4
 
-  | 参数名    | 类型   | 含义                                           |
-  | --------- | ------ | ---------------------------------------------- |
-  | baudRate  | int    | baudRate：波特率                               |
-  | dataLen   | int    | dataLen：数据位长度，目前固定为8               |
+  | 参数名       | 类型     | 含义                           |
+  | --------- | ------ | ---------------------------- |
+  | baudRate  | int    | baudRate：波特率                 |
+  | dataLen   | int    | dataLen：数据位长度，目前固定为8         |
   | parityBit | string | parityBit：奇偶校验位，目前固定为N，代表无校验 |
-  | stopBit   | int    | stopBit: 停止位，目前固定为1                   |
+  | stopBit   | int    | stopBit: 停止位，目前固定为1          |
 
 
 - 返回：
@@ -1931,7 +1893,6 @@
 
 - **此条指令为CR系列机器人特有；**
 
-  
 
 ## 3.62 GetTerminal485
 
@@ -1954,10 +1915,10 @@
   返回：0,{115200, 8, N, 1},GetTerminal485();
 
   说明：**只在特定版本支持此命令**
-  
+
   **此条指令为CR系列机器人特有；**
-  
-  
+
+  ​
 
 ## 3.63 LoadSwitch
 
@@ -1971,8 +1932,8 @@
 
 - 参数详解：1
 
-  | 参数名 | 类型 | 含义                                                         |
-  | ------ | ---- | ------------------------------------------------------------ |
+  | 参数名    | 类型   | 含义                                       |
+  | ------ | ---- | ---------------------------------------- |
   | status | int  | status：设置负载设置状态，0：关闭；1：开启，开启负载设置会提高碰撞灵敏度 |
 
 - 返回：
@@ -1992,85 +1953,85 @@
 
 ​	30004端口即实时反馈端口(30004、30005以及30006端口将在控制器3.5.2+版本支持)，客户端**每8ms**能收到一次机器人如下表所示的信息。30005服务器端口**每200ms反馈机器人的信息**，30006端口为**可配置**的反馈机器人信息端口(默认为每**50ms**反馈)；通过实时反馈端口每次收到的数据包有1440个字节，这些字节以标准的格式排列。下表是字节排列的顺序表。(30006端口的实时数据的配置更新可以在线修改后，实时生效；）
 
-|     意义/Meaning     | 数据类型/Type  | 值的数目/Number of values | 字节大小/Size in bytes | 字节位置值/Byte position value |                          描述/Notes                          | 支持产品    |
-| :------------------: | :------------: | :-----------------------: | :--------------------: | :----------------------------: | :----------------------------------------------------------: | ----------- |
-|     MessageSize      | unsigned short |             1             |           2            |          0000 ~ 0001           |         消息字节总长度/Total message length in bytes         | CR\MG\M1Pro |
-|                      | unsigned short |             3             |           6            |          0002 ~ 0007           |                            保留位                            | CR\MG\M1Pro |
-|    DigitalInputs     |     uint64     |             1             |           8            |          0008 ~ 0015           |        数字输入/Current state of the digital inputs.         | CR\MG\M1Pro |
-|    DigitalOutputs    |     uint64     |             1             |           8            |          0016 ~ 0023           |                           数字输出                           | CR\MG\M1Pro |
-|      RobotMode       |     uint64     |             1             |           8            |          0024 ~ 0031           |                    机器人模式/Robot mode                     | CR\MG\M1Pro |
-|      TimeStamp       |     uint64     |             1             |           8            |          0032 ~ 0039           |                       时间戳（单位ms）                       | CR          |
-|                      |     uint64     |             1             |           8            |          0040 ~ 0047           |                            保留位                            | CR\MG\M1Pro |
-|      TestValue       |     uint64     |             1             |           8            |          0048 ~ 0055           |          内存结构测试标准值  0x0123 4567 89AB CDEF           | CR\MG\M1Pro |
-|                      |     double     |             1             |           8            |          0056 ~ 0063           |                            保留位                            | CR\MG\M1Pro |
-|     SpeedScaling     |     double     |             1             |           8            |          0064 ~ 0071           |       速度比例/Speed scaling of the trajectory limiter       | CR\MG       |
-|  LinearMomentumNorm  |     double     |             1             |           8            |          0072 ~ 0079           | 机器人当前动量/Norm of Cartesian linear momentum(需要特定硬件版本) | CR          |
-|        VMain         |     double     |             1             |           8            |          0080 ~ 0087           |             控制板电压/Masterboard: Main voltage             | CR          |
-|        VRobot        |     double     |             1             |           8            |          0088 ~ 0095           |         机器人电压/Masterboard: Robot voltage (48V)          | CR          |
-|        IRobot        |     double     |             1             |           8            |          0096 ~ 0103           |            机器人电流/Masterboard: Robot current             | CR          |
-|                      |     double     |             1             |           8            |          0104 ~ 0111           |                            保留位                            | CR\MG\M1Pro |
-|                      |     double     |             1             |           8            |          0112 ~ 0119           |                            保留位                            | CR\MG\M1Pro |
-|  ToolAcceleroMeter   |     double     |             3             |           24           |          0120 ~ 0143           | TCP加速度/Tool x,y and z accelerometer values(需要特定硬件版本) | CR          |
-|    ElbowPosition     |     double     |             3             |           24           |          0144 ~ 0167           |           肘位置/Elbow position(需要特定硬件版本)            | CR          |
-|    ElbowVelocity     |     double     |             3             |           24           |          0168 ~ 0191           |           肘速度/Elbow velocity(需要特定硬件版本)            | CR          |
-|       QTarget        |     double     |             6             |           48           |          0192 ~ 0239           |             目标关节位置/Target joint positions              | CR\MG       |
-|       QDTarget       |     double     |             6             |           48           |          0240 ~ 0287           |             目标关节速度/Target joint velocities             | CR\MG       |
-|      QDDTarget       |     double     |             6             |           48           |          0288 ~ 0335           |          目标关节加速度/Target joint accelerations           | CR\MG       |
-|       ITarget        |     double     |             6             |           48           |          0336 ~ 0383           |              目标关节电流/Target joint currents              | CR\MG       |
-|       MTarget        |     double     |             6             |           48           |          0384 ~ 0431           |         目标关节扭矩/Target joint moments (torques)          | CR\MG       |
-|       QActual        |     double     |             6             |           48           |          0432 ~ 0479           |             实际关节位置/Actual joint positions              | CR\MG       |
-|       QDActual       |     double     |             6             |           48           |          0480 ~ 0527           |             实际关节速度/Actual joint velocities             | CR\MG       |
-|       IActual        |     double     |             6             |           48           |          0528 ~ 0575           |              实际关节电流/Actual joint currents              | CR\MG       |
-|    ActualTCPForce    |     double     |             6             |           48           |          0576 ~ 0623           |                TCP传感器力值(通过六维力计算)                 | CR\MG       |
-|   ToolVectorActual   |     double     |             6             |           48           |          0624 ~ 0671           | TCP笛卡尔实际坐标值/Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG       |
-|    TCPSpeedActual    |     double     |             6             |           48           |          0672 ~ 0719           | TCP笛卡尔实际速度值/Actual speed of the tool given in Cartesian coordinates | CR\MG       |
-|       TCPForce       |     double     |             6             |           48           |          0720 ~ 0767           |                 TCP力值（通过关节电流计算）                  | CR          |
-|   ToolVectorTarget   |     double     |             6             |           48           |          0768 ~ 0815           | TCP笛卡尔目标坐标值/Target Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG       |
-|    TCPSpeedTarget    |     double     |             6             |           48           |          0816 ~ 0863           | TCP笛卡尔目标速度值/Target speed of the tool given in Cartesian coordinates | CR\MG       |
-|  MotorTemperatures   |     double     |             6             |           48           |          0864 ~ 0911           |    关节温度/Temperature of each joint in degrees celsius     | CR          |
-|      JointModes      |     double     |             6             |           48           |          0912 ~ 0959           |               关节控制模式/Joint control modes               | CR          |
-|       VActual        |     double     |             6             |           48           |          960  ~ 1007           |                关节电压/Actual joint voltages                | CR          |
-|       HandType       |      char      |             4             |           4            |          1008 ~ 1011           |                             手系                             | CR\M1Pro    |
-|         User         |      char      |             1             |           1            |              1012              |                           用户坐标                           | CR          |
-|         Tool         |      char      |             1             |           1            |              1013              |                           工具坐标                           | CR          |
-|     RunQueuedCmd     |      char      |             1             |           1            |              1014              |                       算法队列运行标志                       | CR          |
-|     PauseCmdFlag     |      char      |             1             |           1            |              1015              |                       算法队列暂停标志                       | CR          |
-|    VelocityRatio     |      char      |             1             |           1            |              1016              |                     关节速度比例(0~100)                      | CR          |
-|  AccelerationRatio   |      char      |             1             |           1            |              1017              |                    关节加速度比例(0~100)                     | CR          |
-|      JerkRatio       |      char      |             1             |           1            |              1018              |                   关节加加速度比例(0~100)                    | CR          |
-|   XYZVelocityRatio   |      char      |             1             |           1            |              1019              |                  笛卡尔位置速度比例(0~100)                   | CR          |
-|    RVelocityRatio    |      char      |             1             |           1            |              1020              |                  笛卡尔姿态速度比例(0~100)                   | CR          |
-| XYZAccelerationRatio |      char      |             1             |           1            |              1021              |                 笛卡尔位置加速度比例(0~100)                  | CR          |
-|  RAccelerationRatio  |      char      |             1             |           1            |              1022              |                 笛卡尔姿态加速度比例(0~100)                  | CR          |
-|     XYZJerkRatio     |      char      |             1             |           1            |              1023              |                笛卡尔位置加加速度比例(0~100)                 | CR          |
-|      RJerkRatio      |      char      |             1             |           1            |              1024              |                笛卡尔姿态加加速度比例(0~100)                 | CR          |
-|     BrakeStatus      |      char      |             1             |           1            |              1025              |                        机器人抱闸状态                        | CR          |
-|     EnableStatus     |      char      |             1             |           1            |              1026              |                        机器人使能状态                        | CR          |
-|      DragStatus      |      char      |             1             |           1            |              1027              |                        机器人拖拽状态                        | CR          |
-|    RunningStatus     |      char      |             1             |           1            |              1028              |                        机器人运行状态                        | CR          |
-|     ErrorStatus      |      char      |             1             |           1            |              1029              |                        机器人报警状态                        | CR          |
-|     JogStatusCR      |      char      |             1             |           1            |              1030              |                        机器人点动状态                        | CR          |
-|     CRRobotType      |      char      |             1             |           1            |              1031              |                           机器类型                           | CR          |
-|   DragButtonSignal   |      char      |             1             |           1            |              1032              |                        按钮板拖拽信号                        | CR          |
-|  EnableButtonSignal  |      char      |             1             |           1            |              1033              |                        按钮板使能信号                        | CR          |
-|  RecordButtonSignal  |      char      |             1             |           1            |              1034              |                        按钮板录制信号                        | CR          |
-| ReappearButtonSignal |      char      |             1             |           1            |              1035              |                        按钮板复现信号                        | CR          |
-|   JawButtonSignal    |      char      |             1             |           1            |              1036              |                      按钮板夹爪控制信号                      | CR          |
-|    SixForceOnline    |      char      |             1             |           1            |              1037              |                        六维力在线状态                        | CR          |
-|     Reserve2[82]     |      char      |             1             |           82           |           1038-1119            |                            保留位                            | CR\MG\M1Pro |
-|      MActual[6]      |     double     |             6             |           48           |          1120 ~ 1167           |                           实际扭矩                           | CR          |
-|         Load         |     double     |             1             |           8            |           1168-1175            |                          负载重量kg                          | CR\MG\M1Pro |
-|       CenterX        |     double     |             1             |           8            |           1176-1183            |                       X方向偏心距离mm                        | CR\MG\M1Pro |
-|       CenterY        |     double     |             1             |           8            |           1184-1191            |                       Y方向偏心距离mm                        | CR\MG\M1Pro |
-|       CenterZ        |     double     |             1             |           8            |           1192-1199            |                       Z方向偏心距离mm                        | CR\MG\M1Pro |
-|       User[6]        |     double     |             6             |           48           |           1200-1247            |                          用户坐标值                          | CR          |
-|       Tool[6]        |     double     |             6             |           48           |           1248-1295            |                          工具坐标值                          | CR          |
-|      TraceIndex      |     double     |             1             |           8            |           1296-1303            |                       轨迹复现运行索引                       | CR          |
-|   SixForceValue[6]   |     double     |             6             |           48           |           1304-1351            |                     当前六维力数据原始值                     | CR          |
-| TargetQuaternion[4]  |     double     |             4             |           32           |           1352-1383            |                   [qw,qx,qy,qz] 目标四元数                   | CR          |
-| ActualQuaternion[4]  |     double     |             4             |           32           |           1384-1415            |                  [qw,qx,qy,qz]  实际四元数                   | CR          |
-|     Reserve3[24]     |      char      |             1             |           24           |          1416 ~ 1440           |                            保留位                            | CR\MG\M1Pro |
-|        TOTAL         |                |                           |          1440          |                                |                       1440byte package                       |             |
+|      意义/Meaning      |   数据类型/Type    | 值的数目/Number of values | 字节大小/Size in bytes | 字节位置值/Byte position value |                 描述/Notes                 | 支持产品        |
+| :------------------: | :------------: | :-------------------: | :----------------: | :-----------------------: | :--------------------------------------: | ----------- |
+|     MessageSize      | unsigned short |           1           |         2          |        0000 ~ 0001        |  消息字节总长度/Total message length in bytes   | CR\MG\M1Pro |
+|                      | unsigned short |           3           |         6          |        0002 ~ 0007        |                   保留位                    | CR\MG\M1Pro |
+|    DigitalInputs     |     uint64     |           1           |         8          |        0008 ~ 0015        | 数字输入/Current state of the digital inputs. | CR\MG\M1Pro |
+|    DigitalOutputs    |     uint64     |           1           |         8          |        0016 ~ 0023        |                   数字输出                   | CR\MG\M1Pro |
+|      RobotMode       |     uint64     |           1           |         8          |        0024 ~ 0031        |             机器人模式/Robot mode             | CR\MG\M1Pro |
+|      TimeStamp       |     uint64     |           1           |         8          |        0032 ~ 0039        |                时间戳（单位ms）                 | CR          |
+|                      |     uint64     |           1           |         8          |        0040 ~ 0047        |                   保留位                    | CR\MG\M1Pro |
+|      TestValue       |     uint64     |           1           |         8          |        0048 ~ 0055        |     内存结构测试标准值  0x0123 4567 89AB CDEF     | CR\MG\M1Pro |
+|                      |     double     |           1           |         8          |        0056 ~ 0063        |                   保留位                    | CR\MG\M1Pro |
+|     SpeedScaling     |     double     |           1           |         8          |        0064 ~ 0071        | 速度比例/Speed scaling of the trajectory limiter | CR\MG       |
+|  LinearMomentumNorm  |     double     |           1           |         8          |        0072 ~ 0079        | 机器人当前动量/Norm of Cartesian linear momentum(需要特定硬件版本) | CR          |
+|        VMain         |     double     |           1           |         8          |        0080 ~ 0087        |     控制板电压/Masterboard: Main voltage      | CR          |
+|        VRobot        |     double     |           1           |         8          |        0088 ~ 0095        |  机器人电压/Masterboard: Robot voltage (48V)  | CR          |
+|        IRobot        |     double     |           1           |         8          |        0096 ~ 0103        |     机器人电流/Masterboard: Robot current     | CR          |
+|                      |     double     |           1           |         8          |        0104 ~ 0111        |                   保留位                    | CR\MG\M1Pro |
+|                      |     double     |           1           |         8          |        0112 ~ 0119        |                   保留位                    | CR\MG\M1Pro |
+|  ToolAcceleroMeter   |     double     |           3           |         24         |        0120 ~ 0143        | TCP加速度/Tool x,y and z accelerometer values(需要特定硬件版本) | CR          |
+|    ElbowPosition     |     double     |           3           |         24         |        0144 ~ 0167        |       肘位置/Elbow position(需要特定硬件版本)       | CR          |
+|    ElbowVelocity     |     double     |           3           |         24         |        0168 ~ 0191        |       肘速度/Elbow velocity(需要特定硬件版本)       | CR          |
+|       QTarget        |     double     |           6           |         48         |        0192 ~ 0239        |      目标关节位置/Target joint positions       | CR\MG       |
+|       QDTarget       |     double     |           6           |         48         |        0240 ~ 0287        |      目标关节速度/Target joint velocities      | CR\MG       |
+|      QDDTarget       |     double     |           6           |         48         |        0288 ~ 0335        |    目标关节加速度/Target joint accelerations    | CR\MG       |
+|       ITarget        |     double     |           6           |         48         |        0336 ~ 0383        |       目标关节电流/Target joint currents       | CR\MG       |
+|       MTarget        |     double     |           6           |         48         |        0384 ~ 0431        |  目标关节扭矩/Target joint moments (torques)   | CR\MG       |
+|       QActual        |     double     |           6           |         48         |        0432 ~ 0479        |      实际关节位置/Actual joint positions       | CR\MG       |
+|       QDActual       |     double     |           6           |         48         |        0480 ~ 0527        |      实际关节速度/Actual joint velocities      | CR\MG       |
+|       IActual        |     double     |           6           |         48         |        0528 ~ 0575        |       实际关节电流/Actual joint currents       | CR\MG       |
+|    ActualTCPForce    |     double     |           6           |         48         |        0576 ~ 0623        |            TCP传感器力值(通过六维力计算)             | CR\MG       |
+|   ToolVectorActual   |     double     |           6           |         48         |        0624 ~ 0671        | TCP笛卡尔实际坐标值/Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG       |
+|    TCPSpeedActual    |     double     |           6           |         48         |        0672 ~ 0719        | TCP笛卡尔实际速度值/Actual speed of the tool given in Cartesian coordinates | CR\MG       |
+|       TCPForce       |     double     |           6           |         48         |        0720 ~ 0767        |             TCP力值（通过关节电流计算）              | CR          |
+|   ToolVectorTarget   |     double     |           6           |         48         |        0768 ~ 0815        | TCP笛卡尔目标坐标值/Target Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation | CR\MG       |
+|    TCPSpeedTarget    |     double     |           6           |         48         |        0816 ~ 0863        | TCP笛卡尔目标速度值/Target speed of the tool given in Cartesian coordinates | CR\MG       |
+|  MotorTemperatures   |     double     |           6           |         48         |        0864 ~ 0911        | 关节温度/Temperature of each joint in degrees celsius | CR          |
+|      JointModes      |     double     |           6           |         48         |        0912 ~ 0959        |        关节控制模式/Joint control modes        | CR          |
+|       VActual        |     double     |           6           |         48         |        960  ~ 1007        |        关节电压/Actual joint voltages        | CR          |
+|       HandType       |      char      |           4           |         4          |        1008 ~ 1011        |                    手系                    | CR\M1Pro    |
+|         User         |      char      |           1           |         1          |           1012            |                   用户坐标                   | CR          |
+|         Tool         |      char      |           1           |         1          |           1013            |                   工具坐标                   | CR          |
+|     RunQueuedCmd     |      char      |           1           |         1          |           1014            |                 算法队列运行标志                 | CR          |
+|     PauseCmdFlag     |      char      |           1           |         1          |           1015            |                 算法队列暂停标志                 | CR          |
+|    VelocityRatio     |      char      |           1           |         1          |           1016            |              关节速度比例(0~100)               | CR          |
+|  AccelerationRatio   |      char      |           1           |         1          |           1017            |              关节加速度比例(0~100)              | CR          |
+|      JerkRatio       |      char      |           1           |         1          |           1018            |             关节加加速度比例(0~100)              | CR          |
+|   XYZVelocityRatio   |      char      |           1           |         1          |           1019            |             笛卡尔位置速度比例(0~100)             | CR          |
+|    RVelocityRatio    |      char      |           1           |         1          |           1020            |             笛卡尔姿态速度比例(0~100)             | CR          |
+| XYZAccelerationRatio |      char      |           1           |         1          |           1021            |            笛卡尔位置加速度比例(0~100)             | CR          |
+|  RAccelerationRatio  |      char      |           1           |         1          |           1022            |            笛卡尔姿态加速度比例(0~100)             | CR          |
+|     XYZJerkRatio     |      char      |           1           |         1          |           1023            |            笛卡尔位置加加速度比例(0~100)            | CR          |
+|      RJerkRatio      |      char      |           1           |         1          |           1024            |            笛卡尔姿态加加速度比例(0~100)            | CR          |
+|     BrakeStatus      |      char      |           1           |         1          |           1025            |                 机器人抱闸状态                  | CR          |
+|     EnableStatus     |      char      |           1           |         1          |           1026            |                 机器人使能状态                  | CR          |
+|      DragStatus      |      char      |           1           |         1          |           1027            |                 机器人拖拽状态                  | CR          |
+|    RunningStatus     |      char      |           1           |         1          |           1028            |                 机器人运行状态                  | CR          |
+|     ErrorStatus      |      char      |           1           |         1          |           1029            |                 机器人报警状态                  | CR          |
+|     JogStatusCR      |      char      |           1           |         1          |           1030            |                 机器人点动状态                  | CR          |
+|     CRRobotType      |      char      |           1           |         1          |           1031            |                   机器类型                   | CR          |
+|   DragButtonSignal   |      char      |           1           |         1          |           1032            |                 按钮板拖拽信号                  | CR          |
+|  EnableButtonSignal  |      char      |           1           |         1          |           1033            |                 按钮板使能信号                  | CR          |
+|  RecordButtonSignal  |      char      |           1           |         1          |           1034            |                 按钮板录制信号                  | CR          |
+| ReappearButtonSignal |      char      |           1           |         1          |           1035            |                 按钮板复现信号                  | CR          |
+|   JawButtonSignal    |      char      |           1           |         1          |           1036            |                按钮板夹爪控制信号                 | CR          |
+|    SixForceOnline    |      char      |           1           |         1          |           1037            |                 六维力在线状态                  | CR          |
+|     Reserve2[82]     |      char      |           1           |         82         |         1038-1119         |                   保留位                    | CR\MG\M1Pro |
+|      MActual[6]      |     double     |           6           |         48         |        1120 ~ 1167        |                   实际扭矩                   | CR          |
+|         Load         |     double     |           1           |         8          |         1168-1175         |                  负载重量kg                  | CR\MG\M1Pro |
+|       CenterX        |     double     |           1           |         8          |         1176-1183         |                X方向偏心距离mm                 | CR\MG\M1Pro |
+|       CenterY        |     double     |           1           |         8          |         1184-1191         |                Y方向偏心距离mm                 | CR\MG\M1Pro |
+|       CenterZ        |     double     |           1           |         8          |         1192-1199         |                Z方向偏心距离mm                 | CR\MG\M1Pro |
+|       User[6]        |     double     |           6           |         48         |         1200-1247         |                  用户坐标值                   | CR          |
+|       Tool[6]        |     double     |           6           |         48         |         1248-1295         |                  工具坐标值                   | CR          |
+|      TraceIndex      |     double     |           1           |         8          |         1296-1303         |                 轨迹复现运行索引                 | CR          |
+|   SixForceValue[6]   |     double     |           6           |         48         |         1304-1351         |                当前六维力数据原始值                | CR          |
+| TargetQuaternion[4]  |     double     |           4           |         32         |         1352-1383         |           [qw,qx,qy,qz] 目标四元数            | CR          |
+| ActualQuaternion[4]  |     double     |           4           |         32         |         1384-1415         |           [qw,qx,qy,qz]  实际四元数           | CR          |
+|     Reserve3[24]     |      char      |           1           |         24         |        1416 ~ 1440        |                   保留位                    | CR\MG\M1Pro |
+|        TOTAL         |                |                       |        1440        |                           |             1440byte package             |             |
 
 其中Robot Mode返回机器人模式：                        
 
@@ -2078,7 +2039,7 @@
 | ---- | --------------------- | ---------- |
 | 1    | ROBOT_MODE_INIT       | 初始化        |
 | 2    | ROBOT_MODE_BRAKE_OPEN | 抱闸松开       |
-| 3    |                       | 保留位        |
+| 3    | ---                   | 保留位        |
 | 4    | ROBOT_MODE_DISABLED   | 未使能(抱闸未松开) |
 | 5    | ROBOT_MODE_ENABLE     | 使能(空闲)     |
 | 6    | ROBOT_MODE_BACKDRIVE  | 拖拽         |
@@ -2127,19 +2088,24 @@
 
 - 其中RobotType表示机器类型：
 
-  | RobotType值 | 代表机型  |
-  | ---------- | ----- |
-  | 3          | CR3   |
-  | 31         | CR3L  |
-  | 5          | CR5   |
-  | 7          | CR7   |
-  | 10         | CR10  |
-  | 12         | CR12  |
-  | 16         | CR16  |
-  | 1          | MG400 |
-  | 2          | M1Pro |
+  | RobotType值 | 代表机型   |
+  | ---------- | ------ |
+  | 3          | CR3    |
+  | 31         | CR3L   |
+  | 5          | CR5    |
+  | 7          | CR7    |
+  | 10         | CR10   |
+  | 12         | CR12   |
+  | 16         | CR16   |
+  | 1          | MG400  |
+  | 2          | M1Pro  |
+  | 101        | Nova 2 |
+  | 103        | Nova 5 |
+  | 113        | CR3V2  |
+  | 115        | CR5V2  |
+  | 120        | CR10V2 |
+  |            |        |
 
-  
 
 
 # 5.通信协议----运动相关端口
@@ -2150,25 +2116,24 @@
 
 
 
-| 指令         | 支持产品    | 描述                                                     |
-| ------------ | ----------- | -------------------------------------------------------- |
-| MovJ         | CR\MG\M1Pro | 点到点运动，目标点位为笛卡尔点位                         |
-| MovL         | CR\MG\M1Pro | 直线运动，目标点位为笛卡尔点位                           |
-| JointMovJ    | CR\MG\M1Pro | 点到点运动，目标点位为关节点位                           |
-| MovLIO       | CR\MG\M1Pro | 直线运动过程中并行设置数字输出端口的状态，可设置多组     |
-| MovJIO       | CR\MG\M1Pro | 点到点运动过程中并行设置数字输出端口的状态，可设置多组   |
-| Arc          | CR\MG\M1Pro | 圆弧运动。需结合其他运动指令完成圆弧运动                 |
-| ServoJ       | CR          | 基于关节空间的动态跟随命令                               |
-| ServoP       | CR          | 基于笛卡尔空间的动态跟随命令                             |
-| MoveJog      | CR\MG\M1Pro | 关节点动                                                 |
-| StartTrace   | CR          | 轨迹拟合                                                 |
-| StartPath    | CR          | 轨迹复现                                                 |
-| StartFCTrace | CR          | 带力控的轨迹拟合                                         |
-| Sync         | CR\MG\M1Pro | 阻塞程序执行队列指令                                     |
-| RelMovJTool  | CR          | 沿工具坐标系进行相对运动，末端运动方式为关节运动         |
-| RelMovLTool  | CR          | 沿工具坐标系进行相对运动指令，末端运动方式为直线运动     |
-| RelMovJUser  | CR\MG\M1Pro | 沿用户坐标系进行相对运动指令，末端运动方式为关节运动     |
-| RelMovLUser  | CR\MG\M1Pro | 沿用户坐标系进行相对运动指令，末端运动方式为直线运动     |
+| 指令           | 支持产品        | 描述                           |
+| ------------ | ----------- | ---------------------------- |
+| MovJ         | CR\MG\M1Pro | 点到点运动，目标点位为笛卡尔点位             |
+| MovL         | CR\MG\M1Pro | 直线运动，目标点位为笛卡尔点位              |
+| JointMovJ    | CR\MG\M1Pro | 点到点运动，目标点位为关节点位              |
+| MovLIO       | CR\MG\M1Pro | 直线运动过程中并行设置数字输出端口的状态，可设置多组   |
+| MovJIO       | CR\MG\M1Pro | 点到点运动过程中并行设置数字输出端口的状态，可设置多组  |
+| Arc          | CR\MG\M1Pro | 圆弧运动。需结合其他运动指令完成圆弧运动         |
+| ServoJ       | CR          | 基于关节空间的动态跟随命令                |
+| ServoP       | CR          | 基于笛卡尔空间的动态跟随命令               |
+| MoveJog      | CR\MG\M1Pro | 点动                           |
+| StartTrace   | CR          | 轨迹拟合                         |
+| StartPath    | CR          | 轨迹复现                         |
+| Sync         | CR\MG\M1Pro | 阻塞程序执行队列指令                   |
+| RelMovJTool  | CR          | 沿工具坐标系进行相对运动，末端运动方式为关节运动     |
+| RelMovLTool  | CR          | 沿工具坐标系进行相对运动指令，末端运动方式为直线运动   |
+| RelMovJUser  | CR\MG\M1Pro | 沿用户坐标系进行相对运动指令，末端运动方式为关节运动   |
+| RelMovLUser  | CR\MG\M1Pro | 沿用户坐标系进行相对运动指令，末端运动方式为直线运动   |
 | RelJointMovJ | CR\MG\M1Pro | 沿各轴关节坐标系进行相对运动指令，末端运动方式为关节运动 |
 
 
@@ -2244,8 +2209,8 @@
   返回：
 
   ErrorID,{},MovL(-500,100,200,150,0,90,SpeedL=60);   
-  
-  
+
+  ​
 
 ## 5.3 JointMovJ
 
@@ -2281,8 +2246,8 @@
   返回：
 
   ErrorID,{},JointMovJ(0,0,-90,0,90,0,SpeedJ=60,AccJ=50);   
-  
-  
+
+  ​
 
 ## 5.4 MovLIO
 
@@ -2318,8 +2283,8 @@
 - 示例：
 
   MovLIO(-500,100,200,150,0,90,{0,50,1,0})
-  
-  
+
+  ​
 
 ## 5.5 MovJIO
 
@@ -2355,8 +2320,8 @@
 - 示例：
 
   MovJIO(-500,100,200,150,0,90,{0,50,1,0})
-  
-  
+
+  ​
 
 ## 5.6 Arc
 
@@ -2399,7 +2364,6 @@
 
   Arc(-350,-200,200,150,0,90,-300,-250,200,150,0,90)
 
-  
 
 ## 5.7 ServoJ
 
@@ -2429,10 +2393,10 @@
 - 示例：
 
   ServoJ(0,0,-90,0,90,0)
-  
+
   说明：客户二次开发使用频率建议设置为33Hz（30ms），即循环间隔至少设置30ms
-  
-  
+
+  ​
 
 ## 5.8 ServoP
 
@@ -2462,10 +2426,9 @@
 - 示例：
 
   ServoP(-500,100,200,150,0,90）
-  
+
   说明：客户二次开发使用频率建议设置为33Hz（30ms），即循环间隔至少设置30ms
-  
-  
+
 
 
 ## 5.9 MoveJog
@@ -2509,8 +2472,7 @@
   0,{},MoveJog();
 
   说明：**CR控制器3.5.2版本、MG400/M1Pro控制器1.5.6版本及以上版本支持此命令；**其中用户若是再发关节点动运行则会忽略CoordType、User以及Tool这三个可选设置参数；
-  
-  
+
 
 
 ## 5.10 StartTrace
@@ -2557,7 +2519,6 @@
 
 - 说明：**CR控制器3.5.2版本及以上版本支持此命令；**
 
-  
 
 ## 5.11 StartPath
 
@@ -2605,58 +2566,9 @@
 
 - 说明：**CR控制器3.5.2版本及以上版本支持此命令；**
 
-  
-
-## 5.12 StartFCTrace
-
-- 功能：带力控的轨迹拟合。(轨迹文件笛卡尔点)
-
-- 格式：StartFCTrace(traceName)
-
-- 参数数量：1
-
-- 支持端口：30003
-
-- **备注：用户可以通过获取RobotMode查询机器人运行状态，若在ROBOT_MODE_RUNNING表示机器人在轨迹复现运行中，达到ROBOT_MODE_IDLE表示轨迹复现运行完成，ROBOT_MODE_ERROR表示报警；**
-
-- 参数详解：1
-
-  | 参数名       | 类型     | 含义                                       |
-  | --------- | ------ | ---------------------------------------- |
-  | traceName | string | 轨迹文件名（含后缀）<br /> 轨迹路径存放在/dobot/userdata/project/process/trajectory/ |
-
-- 返回：
-
-  ErrorID,{},StartFCTrace(traceName);  
-
-- 示例：先获取轨迹文件名字recv_string的轨迹的首个点{x,y,z,rx,ry,rz}，在点到点运动{x,y,z,rx,ry,rz}后，再下发轨迹文件名字recv_string按照原速复现，按笛卡尔路径匀速复现；
-
-  GetTraceStartPose(recv_string)
-
-  返回：
-
-  0,{x,y,z,rx,ry,rz},GetTraceStartPose(recv_string);
-
-  MovJ(x,y,z,rx,ry,rz)
-
-  返回：
-
-  0,{},MovJ(x,y,z,rx,ry,rz);
-
-  StartFCTrace(recv_string)
-
-  Sync()    // 由于带力控的轨迹拟合，终点是不确定的，必须加Sync等待StartFCTrace执行完，才能继续执行其它运动指令。
-
-  返回：
-
-  0,{},StartFCTrace(recv_string);
-
-- 说明：**CR控制器3.5.2版本及以上版本支持此命令；**
-
-  
 
 
-## 5.13 Sync
+## 5.12 Sync
 
 - 功能：阻塞程序执行队列指令，待所有队列指令执行完才返回。
 
@@ -2673,11 +2585,10 @@
 - 示例：
 
   Sync()
-  
-  
 
 
-## 5.14 RelMovJTool
+
+## 5.13 RelMovJTool
 
 - 功能：沿工具坐标系进行相对运动指令，末端运动方式为关节运动。
 
@@ -2710,12 +2621,11 @@
 - 示例：
 
   RelMovJTool(10,10,10,0,0,0,0)
-  
+
 - 说明：**CR控制器3.5.2版本及以上版本支持此命令；**
 
-  
 
-## 5.15 RelMovLTool
+## 5.14 RelMovLTool
 
 - 功能：沿工具坐标系进行相对运动指令，末端运动方式为直线运动。
 
@@ -2748,12 +2658,11 @@
 - 示例：
 
   RelMovLTool(10,10,10,0,0,0,0)
-  
+
 - 说明：**CR控制器3.5.2版本及以上版本支持此命令；**
 
-  
 
-## 5.16 RelMovJUser
+## 5.15 RelMovJUser
 
 - 功能：沿用户坐标系进行相对运动指令，末端运动方式为关节运动。
 
@@ -2786,12 +2695,11 @@
 - 示例：
 
   RelMovJUser(10,10,10,0,0,0,0)
-  
+
 - 说明：**CR控制器3.5.2版本、MG400/M1Pro控制器1.5.6版本及以上版本支持此命令；**
 
-  
 
-## 5.17 RelMovLUser
+## 5.16 RelMovLUser
 
 - 功能：沿用户坐标系进行相对运动指令，末端运动方式为直线运动。
 
@@ -2824,14 +2732,13 @@
 - 示例：
 
   RelMovLUser(10,10,10,0,0,0,0)
-  
+
 - 说明：**CR控制器3.5.2版本、MG400/M1Pro控制器1.5.6版本及以上版本支持此命令；**
 
-  
-  
-  
+  ​
 
-## 5.18 RelJointMovJ
+
+## 5.19 RelJointMovJ
 
 - 功能：沿各轴关节坐标系进行相对运动指令，末端运动方式为关节运动。
 
@@ -2863,7 +2770,7 @@
 - 示例：
 
   RelJointMovJ(10,10,10,0,0,0)
-  
+
 - 说明：**CR控制器3.5.2版本、MG400/M1Pro控制器1.5.6版本及以上版本支持此命令；**
 
 
@@ -2871,18 +2778,18 @@
 
 # 6.错误码描述
 
-| 错误码 | 描述                     | 备注                                                         |
-| ------ | ------------------------ | ------------------------------------------------------------ |
-| 0      | 无错误                   | 下发成功                                                     |
-| -1     | 没有获取成功             | 命令接收失败/建立失败                                        |
-| 。。。 | 。。。                   | 。。。                                                       |
-| -10000 | 命令错误                 | 不存在下发的命令                                             |
-| -20000 | 参数数量错误             | 下发命令中的参数数量错误                                     |
+| 错误码    | 描述           | 备注                                       |
+| ------ | ------------ | ---------------------------------------- |
+| 0      | 无错误          | 下发成功                                     |
+| -1     | 没有获取成功       | 命令接收失败/建立失败                              |
+| 。。。    | 。。。          | 。。。                                      |
+| -10000 | 命令错误         | 不存在下发的命令                                 |
+| -20000 | 参数数量错误       | 下发命令中的参数数量错误                             |
 | -30001 | 第一个参数的参数类型错误 | -30000表示参数类型错误<br /> 最后一位1表示下发第1个参数的参数类型错误 |
 | -30002 | 第二个参数的参数类型错误 | -30000表示参数类型错误<br /> 最后一位2表示下发第2个参数的参数类型错误 |
-| 。。。 | 。。。                   | 。。。                                                       |
+| 。。。    | 。。。          | 。。。                                      |
 | -40001 | 第一个参数的参数范围错误 | -40000表示参数范围错误<br /> 最后一位1表示下发第1个参数的参数范围错误 |
 | -40002 | 第二个参数的参数范围错误 | -40000表示参数范围错误<br /> 最后一位1表示下发第1个参数的参数范围错误 |
-| 。。。 | 。。。                   | 。。。                                                       |
-|        |                          |                                                              |
+| 。。。    | 。。。          | 。。。                                      |
+|        |              |                                          |
 
