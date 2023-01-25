@@ -655,7 +655,7 @@ The commands related to robot setting are as follows:
 
 
 
-## 3.23 SetArmOrientation
+## 3.22 SetArmOrientation
 
 - Function: SetArmOrientation(LorR,UorD,ForN,Config6)
 
@@ -693,7 +693,7 @@ The commands related to robot setting are as follows:
 - **This command can be only used for CR robots.**
   
   
-## 3.24 PowerOn
+## 3.23 PowerOn
 
 - Function: PowerOn()
 - Description: Power on the robot. After the robot is powered on, wait about 10 seconds before enabling it.
@@ -715,7 +715,7 @@ The commands related to robot setting are as follows:
 
 
 
-## 3.25 RunScript
+## 3.24 RunScript
 
 - Function: RunScript(projectName)
 
@@ -739,7 +739,7 @@ The commands related to robot setting are as follows:
 
 
 
-## 3.26 StopScript
+## 3.25 StopScript
 
 - Function: StopScript()
 
@@ -758,7 +758,7 @@ The commands related to robot setting are as follows:
 
 
 
-## 3.27 PauseScript
+## 3.26 PauseScript
 
 - Function: PauseScript()
 
@@ -777,7 +777,7 @@ The commands related to robot setting are as follows:
 
 
 
-## 3.28 ContinueScript
+## 3.27 ContinueScript
 
 - Function: ContinueScript()
 
@@ -798,7 +798,7 @@ The commands related to robot setting are as follows:
 
 
 
-## 3.29 SetSafeSkin
+## 3.28 SetSafeSkin
 
 - Function: SetSafeSkin(status)
 
@@ -825,7 +825,7 @@ The commands related to robot setting are as follows:
 
 
 
-## 3.30 GetTraceStartPose
+## 3.29 GetTraceStartPose
 
 - Function: GetTraceStartPose(traceName)
 
@@ -851,7 +851,7 @@ The commands related to robot setting are as follows:
 - **This command can be only used for CR robots.**
 
 
-## 3.31 GetPathStartPose
+## 3.30 GetPathStartPose
 
 - Function: GetPathStartPose(traceName)
 
@@ -877,7 +877,7 @@ The commands related to robot setting are as follows:
 - **This command can be only used for CR robots.**
   
 
-## 3.32 PositiveSolution
+## 3.31 PositiveSolution
 
 - Function: PositiveSolution(J1,J2,J3,J4,J5,J6,User,Tool)
 
@@ -914,7 +914,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
 
 
-## 3.33 InverseSolution
+## 3.32 InverseSolution
 
 - Function: InverseSolution(X,Y,Z,Rx,Ry,Rz,User,Tool,isJointNear,JointNear)
 
@@ -970,7 +970,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**  
 
 
-## 3.34 SetCollisionLevel
+## 3.33 SetCollisionLevel
 
 - Function: SetCollisionLevel(level)
 
@@ -994,7 +994,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
     
 
-## 3.35 HandleTrajPoints
+## 3.34 HandleTrajPoints
 
 - Function: HandleTrajPoints(traceName)
 
@@ -1025,7 +1025,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
 
 
-## 3.36 GetSixForceData
+## 3.35 GetSixForceData
 
 - Function: GetSixForceData()
 
@@ -1049,7 +1049,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
 
 
-## 3.37 GetAngle
+## 3.36 GetAngle
 
 - Function: GetAngle()
 
@@ -1071,7 +1071,7 @@ Based on the given joint angles, return the spatial position of the end of the r
   Return: 0,{0.0,0.0,90.0,0.0,-90.0,0.0},GetAngle();
   
 
-## 3.38 GetPose
+## 3.37 GetPose
 
 - Function: GetPose(user,tool)
 
@@ -1101,7 +1101,7 @@ Based on the given joint angles, return the spatial position of the end of the r
   Return: 0,{-473.0,-141.0,469.0,-180.0,0.0,90.0},GetPose();
   
 
-## 3.39 EmergencyStop
+## 3.38 EmergencyStop
 
 - Function: EmergencyStop()
 
@@ -1122,7 +1122,7 @@ Based on the given joint angles, return the spatial position of the end of the r
   
 
 
-## 3.40 ModbusCreate
+## 3.39 ModbusCreate
 
 - Function: ModbusCreate(ip,port,slave_id,isRTU)
 
@@ -1158,7 +1158,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
   
 
-## 3.41 ModbusClose
+## 3.40 ModbusClose
 
 - Function: ModbusClose(index)
 
@@ -1184,7 +1184,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
   
 
-## 3.42 GetInBits
+## 3.41 GetInBits
 
 - Function: GetInBits(index,addr,count)
 
@@ -1216,7 +1216,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
 
 
-## 3.43 GetInRegs
+## 3.42 GetInRegs
 
 - Function: GetInRegs(index,addr,count,valType)
 
@@ -1250,7 +1250,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
   
 
-## 3.44 GetCoils
+## 3.43 GetCoils
 
 - Function: GetCoils(index,addr,count)
 
@@ -1282,7 +1282,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
   
 
-## 3.45 SetCoils
+## 3.44 SetCoils
 
 - Function: SetCoils(index,addr,count,valTab)
 
@@ -1316,7 +1316,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
   
 
-## 3.46 GetHoldRegs
+## 3.45 GetHoldRegs
 
 - Function: GetHoldRegs(index,*addr*, *count*,valType)
 
@@ -1351,7 +1351,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
   
 
-## 3.47 SetHoldRegs
+## 3.46 SetHoldRegs
 
 - Function: SetHoldRegs(index,*addr*, *count*,*valTab*,valType)
 
@@ -1387,7 +1387,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
   
 
-## 3.48 GetErrorID
+## 3.47 GetErrorID
 
 - Function: GetErrorID()
 
@@ -1413,7 +1413,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - Note: For error code description, see alarm_controller.json and alarm_servo.json
 
 
-## 3.49 DI
+## 3.48 DI
 
 - Function: DI(index)
 
@@ -1443,7 +1443,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
 
 
-## 3.50 ToolDI
+## 3.49 ToolDI
 
 - Function: ToolDI(index)
 
@@ -1472,7 +1472,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
 
 
-## 3.51 AI
+## 3.50 AI
 
 - Function: AI(index)
 
@@ -1506,7 +1506,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
 
 
-## 3.52 ToolAI
+## 3.51 ToolAI
 
 - Function: ToolAI(index)
 
@@ -1536,7 +1536,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
 
 
-## 3.53 DIGroup
+## 3.52 DIGroup
 
 - Function: DIGroup(index1,index2,...,indexn)
 
@@ -1570,7 +1570,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
 
 
-## 3.54 DOGroup
+## 3.53 DOGroup
 
 - Function: DOGroup(index1,value1,index2,value2,...,indexn,valuen)
 
@@ -1606,7 +1606,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
 
 
-## 3.55 BrakeControl
+## 3.54 BrakeControl
 
 - Function: BrakeControl(axisID,value)     
 
@@ -1636,7 +1636,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
 
 
-## 3.56 StartDrag
+## 3.55 StartDrag
 
 - Function: StartDrag()
 
@@ -1656,7 +1656,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
   
 
-## 3.57 StopDrag
+## 3.56 StopDrag
 
 - Description: Stop Drag mode. This command is supported in CR controller version 3.5.2 and above.
 
@@ -1676,7 +1676,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
   
 
-## 3.58 SetCollideDrag
+## 3.57 SetCollideDrag
 
 - Function: SetCollideDrag(status)
 
@@ -1703,7 +1703,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
   
 
-## 3.59 SetTerminalKeys
+## 3.58 SetTerminalKeys
 
 - Function: SetTerminalKeys(status)
 
@@ -1730,7 +1730,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 - **This command can be only used for CR robots.**
 
 
-## 3.60 SetTerminal485
+## 3.59 SetTerminal485
 
 - Function: SetTerminal485(baudRate, dataLen, parityBit, stopBit)
 
@@ -1760,7 +1760,7 @@ Based on the given joint angles, return the spatial position of the end of the r
   
 
 
-## 3.62 GetTerminal485
+## 3.60 GetTerminal485
 
 - Function: GetTerminal485()
 
@@ -1783,7 +1783,7 @@ Based on the given joint angles, return the spatial position of the end of the r
 
 
 
-## 3.63 LoadSwitch
+## 3.61 LoadSwitch
 
 - Function: LoadSwitch(status)
 
