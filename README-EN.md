@@ -1,4 +1,5 @@
 
+
 # 1. Overview
 
 Dobot industrial robots now support two remote control modes: **remote I/O mode** and **remote Modbus mode**. For details about the control mode, see Setting > Remote Control in *Dobot CRStudio UserGuide*. 
@@ -17,7 +18,7 @@ Server port 29999  (hereinafter referred to as Dashboard port) is responsible fo
 
 Server port 30003  (hereinafter referred to as the real-time feedback port) feeds back the robot information. It only receives the agreed message format from the client but does not give feedback. (Note: Port 30003 port is split into port 30003 and port 30004, which is expected to be implemented in controller version 3.5.2. Controller version 3.5.1 currently has only one 30003 port for real-time feedback or sending motion commands.)
 
-Server port 30004 (hereinafter referred to as real-time feedback port) feeds back robot information every 8ms. Port 30005 provides robot information every 200ms. Port 30006 is a configurable port to feed back robot information. By default, port 30006 provides feedback every 50ms.
+Server port 30004 (hereinafter referred to as real-time feedback port) feeds back robot information every 8ms. Port 30005 is a configurable port to feed back robot information. By default, port 30005 provides feedback every 50ms. Port 30006 is a configurable port to feed back robot information. By default, port 30006 provides feedback every 50ms.
 
 Note: The ENABLEROBOT() command, enablerobot() command, and eNabLErobOt() command represent the same command and are all executed as the enabling command.
 
@@ -127,6 +128,7 @@ The commands related to robot setting are as follows:
 | SetTerminal485    | CR                 | Set the parameters of terminal 485                           |
 | GetTerminal485    | CR                 | Get the parameters of terminal 485                           |
 | LoadSwitch        | CR                 | Sets the load setting state                                  |
+| SetPayload        | MG\M1Pro           | Set the load                                                 |
 
 
 
@@ -609,7 +611,7 @@ The commands related to robot setting are as follows:
 
 ## 3.20 Arch
 
-- Function: Arch(Index)
+- Function: Arch(Index,CP=R)
 
 - Description: set the index of arc parameters  (StartHeight, zLimit, EndHeight) in the Jump mode
 
@@ -619,14 +621,14 @@ The commands related to robot setting are as follows:
   | --------- | ---- | -------------------------------- |
   | Index     | int  | arc parameters index, range: 0~9 |
 
-- Return: ErrorID,{},Arch(Index);
+- Return: ErrorID,{},Arch(Index,CP=R);
 
 - Supporting port: 29999
   
 - Example
   
   ```
-  Arch(1)
+  Arch(1,CP=1)
   ```
 
 
@@ -1808,13 +1810,50 @@ Return: ErrorID,{},LoadSwitch(status);
   ```
 
 - **This command can be only used for CR robots.**
+
+
+
+## 3.64 SetPayload
+
+- Function：SetPayload(load,inertia)
+
+- Description：Set the load
+
+- Parameters：2
+
+- This parameter is mandatory：1
+
+  | Parameters | Type  | Description |
+  | ----  | ----- | ---- |
+  | load  | float | load：Unit kg; Load range of MG400:0~0.5Kg; M1 Pro load range: 0~1.5Kg;
+
+
+- Details of optional parameters：1
   
+  | Parameters | Type  | Description |
+  | ----  | ----- | ---- |
+  | inertia | float | inertia：Set the inertia value；
+
+
+- Supporting port：29999
+
+- Return：
+
+  ErrorID,{},SetPayload(load); 
+  ErrorID,{},SetPayload(inertia);   
+
+- Example：
+
+  SetPayload(0.3)   // 设置负载
+
+- **This command can be only used for MG/M1Pro robots.**
+
 
 
 # 4. Communication Protocol—Real- time Feedback Port
 
 30004 port is the real-time feedback port (30004, 30005, and 30006 ports are supported by controller 3.5.2 or later). The slave can receive information from the robot every 8ms, as shown in the following table.
-30005 port feedback robot information every 200ms. 30006 port  is a configurable port for robot  information feedback (default: 50ms feedback). Each packet received through the real-time feedback port has 1440 bytes, which are arranged in a standard format. The following table shows the order of the bytes.
+30005 port  is a configurable port for robot  information feedback (default: 200ms feedback). 30006 port  is a configurable port for robot  information feedback (default: 50ms feedback). Each packet received through the real-time feedback port has 1440 bytes, which are arranged in a standard format. The following table shows the order of the bytes.
 
 
 
@@ -2002,12 +2041,13 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 | RelMovJUser  | CR\MG\M1Pro | Relative motion is performed along the user coordinate system, and the end motion mode is the joint motion |
 | RelMovLUser  | CR\MG\M1Pro | Relative motion performed along the user coordinate system, and the end motion mode is a linear motion |
 | RelJointMovJ | CR\MG\M1Pro | Relative motion instruction is conducted along the joint coordinate system of each axis, and the end motion mode is joint motion |
-
+| MovJExt      | MG\M1Pro    | Slide control instruction                                    |
+| SyncAll      | MG\M1Pro    | Blocking programs execution                                  |
 
 
 ## 5.1 MovJ
 
-- Function: MovJ(X,Y,Z,Rx,Ry,Rz,User=index,Tool=index,SpeedJ=R,AccJ=R)
+- Function: MovJ(X,Y,Z,Rx,Ry,Rz,User=index,Tool=index,SpeedJ=R,AccJ=R,CP=R)
 
 - Description: point to point movement, the target point is Cartesian point
 
@@ -2027,21 +2067,21 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
 
-- Return: ErrorID,{},MovJ(X,Y,Z,Rx,Ry,Rz);  
+- Return: ErrorID,{},MovJ(X,Y,Z,Rx,Ry,Rz,CP=R);  
 
 - Supporting port: 30003
   
 - Example
   
   ```
-  MovJ(-500,100,200,150,0,90,AccJ=50)
+  MovJ(-500,100,200,150,0,90,AccJ=50,CP=R)
   ```
-  Return: ErrorID,{},MovJ(-500,100,200,150,0,90,AccJ=50);   
+  Return: ErrorID,{},MovJ(-500,100,200,150,0,90,AccJ=50,CP=1);   
 
 
 ## 5.2 MovL
 
-- Function: MovL(X,Y,Z,Rx,Ry,Rz,User=index,Tool=index,SpeedL=R,AccL=R) 
+- Function: MovL(X,Y,Z,Rx,Ry,Rz,User=index,Tool=index,SpeedL=R,AccL=R,CP=R) 
 
 - Description: linear movement, the target point is Cartesian point
 
@@ -2061,21 +2101,21 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   User: indicates the User index 0 to 9. The default value is the last value.
   Tool: Tool index 0 to 9. The default value is the last value.
 
-- Return: ErrorID,{},MovL(X,Y,Z,Rx,Ry,Rz,SpeedL=R,AccL=R);  
+- Return: ErrorID,{},MovL(X,Y,Z,Rx,Ry,Rz,SpeedL=R,AccL=R,CP=R);  
 
 - Supporting port: 30003
   
 - Example
   
   ```
-  MovL(-500,100,200,150,0,90,SpeedL=60)
+  MovL(-500,100,200,150,0,90,SpeedL=60,CP=R)
   ```
-  Return: ErrorID,{},MovL(-500,100,200,150,0,90,SpeedL=60);
+  Return: ErrorID,{},MovL(-500,100,200,150,0,90,SpeedL=60,CP=1);
 
 
 ## 5.3 JointMovJ
 
-- Function: JointMovJ(J1,J2,J3,J4,J5,J6)
+- Function: JointMovJ(J1,J2,J3,J4,J5,J6,CP=R)
 
 - Description: point to point movement, the target point is joint point
 
@@ -2093,21 +2133,21 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   SpeedJ and AccJ are optional parameters, indicating setting joint velocity ratio and acceleration ratio respectively.
   The value has the same meaning as SpeedJ and AccJ setting by port 29999.
 
-- Return: ErrorID,{},JointMovJ(J1,J2,J3,J4,J5,J6,SpeedJ=R,AccJ=R);
+- Return: ErrorID,{},JointMovJ(J1,J2,J3,J4,J5,J6,SpeedJ=R,AccJ=R,CP=R);
 
 - Supporting port: 30003
   
 - Example
   
   ```
-  JointMovJ(0,0,-90,0,90,0)
+  JointMovJ(0,0,-90,0,90,0.CP=1)
   ```
-  Return: ErrorID,{},JointMovJ(0,0,-90,0,90,0,SpeedJ=60,AccJ=50);
+  Return: ErrorID,{},JointMovJ(0,0,-90,0,90,0,SpeedJ=60,AccJ=50,CP=1);
 
 
 ## 5.4 MovLIO
 
-- Function: MovLIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},User=index,Tool=index,SpeedL=R,AccL=R) 
+- Function: MovLIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},User=index,Tool=index,SpeedL=R,AccL=R,CP=R) 
 
 - Description: set the status of digital output port in straight line movement, and the target point is Cartesian point
 
@@ -2139,14 +2179,14 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 - Example
 
   ```
-  MovLIO(-500,100,200,150,0,90,{0,50,1,0})
+  MovLIO(-500,100,200,150,0,90,{0,50,1,0},CP=1)
   ```
 
 
 
 ## 5.5 MovJIO
 
-- Function: MovJIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},User=index,Tool=index,SpeedJ=R,AccJ=R)  
+- Function: MovJIO(X,Y,Z,Rx,Ry,Rz,{Mode,Distance,Index,Status},...,{Mode,Distance,Index,Status},User=index,Tool=index,SpeedJ=R,AccJ=R,CP=1)  
 
 - Description: set the status of digital output port in point-to-point movement, and the target point is Cartesian point
 
@@ -2178,14 +2218,14 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 - Example
 
   ```
-  MovJIO(-500,100,200,150,0,90,{0,50,1,0})
+  MovJIO(-500,100,200,150,0,90,{0,50,1,0},CP=1)
   ```
 
 
 
 ## 5.6 Arc
 
-- Function: Arc(X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2,User=index,Tool=index,SpeedL=R,AccL=R)
+- Function: Arc(X1,Y1,Z1,Rx1,Ry1,Rz1,X2,Y2,Z2,Rx2,Ry2,Rz2,User=index,Tool=index,SpeedL=R,AccL=R,CP=R)
 
 - Description: move from the current position to a target position in an arc interpolated mode under the Cartesian coordinate system
   This command needs to combine with other motion commands to obtain the starting point of an arc trajectory
@@ -2215,8 +2255,8 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
 - Example
 
   ```
-  MovL(-300,-150,200,150,0,90,SpeedL=100,AccL=100)
-  Arc(-350,-200,200,150,0,90,-300,-250,200,150,0,90)
+  MovL(-300,-150,200,150,0,90,SpeedL=100,AccL=100,CP=R)
+  Arc(-350,-200,200,150,0,90,-300,-250,200,150,0,90,CP=1)
   ```
 
   
@@ -2592,6 +2632,157 @@ When users use MG400/M1Pro, you need to fill in four coordinate.
   ```
 
 
+## 5.20 MovJExt
+
+- Description：Slide motion control instruction
+
+- Function：MovJExt(Angle/distance,SpeedE=50,AccE=50,Sync=1)
+
+- Parameters：4
+
+- Supporting port：30003
+
+- This parameter is mandatory：1
+
+  | Parameter | Type  | Description |
+  | ----  | ----- | ---- |
+  | Angle/distance  | float | Position value to move Angle/distance
+
+
+- Details of optional parameters：3
+  
+  | Parameters | Type  | Description |
+  | ----  | ----- | ---- |
+  | SpeedE | int | SpeedE：Set the running speed of this command；
+  | AccE | int | AccE：Set the running acceleration of this command；
+  | Sync | int | Set the running mode of instructions synchronous/asynchronous; Sync=0 asynchronously, sending instructions without waiting for the result to return immediately; Sync=1, send instructions will wait for the result of the operation to return;
+
+
+- Return：
+
+  ErrorID,{},MovJExt(); 
+
+- Example：
+
+  MovJExt(300)   // Move to position 300
+
+- Note: ** This instruction is special for MG\M1Pro series robot; **
+
+
+
+## 5.21 SyncAll
+
+- Description：Block the program before this instruction to execute the queue instructions, until all the previous queue instructions have been executed to return.
+
+- Function：SyncAll()
+
+- Parameters：0
+
+- Supporting port：30003
+
+- Return：
+
+  ErrorID,{},SyncAll();   
+
+- Example：
+
+  SyncAll()
+
+- Note: ** This instruction is special for MG\M1Pro series robot; **
+
+
+## 5.22 Circle3
+
+    Function: Circular motion, only applicable to Cartesian waypoints.
+
+    Format: circle3({p1.x,p1.y,p1.z,p1.a,p1.b,p1.c},{p2.x,p2.y,p2.z,p2.a,p2.b,p2.c},count,User=0,Tool=0,SpeedL=R,AccL=R)
+
+    Number of parameters: 3 required
+
+    Supported port: 30003
+
+    Parameter details:
+    Parameter	Type	Description
+    P1	table	First waypoint
+    P2	table	Second waypoint
+    count	int	Integer greater than 1
+    User	int	User coordinate index
+    Tool	int	Tool coordinate index
+
+    Returns:
+
+    ErrorID,{},circle3(input);
+
+    Example:
+
+    circle3({322.3267,-379.0799,545.6118,-171.5755,-20.8092,62.254},{-153.785,-473.2296,545.6118,-171.5755,-20.8092,3.8774},1)
+
+
+## 5.23 wait
+
+    Function: Delay the queue for a specified period of time.
+
+    Format: wait(time)
+
+    Number of parameters: 1
+
+    Supported port: 30003
+
+    Parameter details:
+    Parameter	Type	Description
+    time	int	Delay time in milliseconds. Range: (0,3600*1000)
+
+    Returns:
+
+    ErrorID,{},wait(time);
+
+    Example:
+
+    wait(1000)
+
+
+## 5.24 pause
+
+    Function: Pause non-script motion commands without clearing the motion queue.
+
+    Format: pause()
+
+    Number of parameters: 0
+
+    Supported port: 30003
+
+    Parameters:
+        No parameters
+
+    Returns:
+
+    ErrorID,{},pause();
+
+    Example:
+
+    pause()
+
+
+## 5.25 continue
+
+    Function: Corresponds to the pause command, resumes the execution of non-script motion commands that were paused. It can also be used to resume receiving and executing motion commands after the robot has stopped due to collision or alarm.
+
+    Format: continue()
+
+    Number of parameters: 0
+
+    Supported port: 30003
+
+    Parameters:
+        No parameters
+
+    Returns:
+
+    ErrorID,{},continue();
+
+    Example:
+
+    continue()
 
 
 # 6.Error code Description
